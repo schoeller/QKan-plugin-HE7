@@ -115,13 +115,6 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                       u'ITWH-Datenbank {:s} wurde nicht gefunden!\nAbbruch!'.format(database_HE))
         return None
 
-
-    # --------------------------------------------------------------------------------------------------
-    # Kontrolle der vorhandenen Profilquerschnitte. 
-
-    fortschritt(u'Pruefung der Profiltypen...', 0.02)
-    progress_bar.setValue(2)
-
     # --------------------------------------------------------------------------------------------------
     # Zur Abschaetzung der voraussichtlichen Laufzeit
 
