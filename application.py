@@ -343,11 +343,7 @@ class ExportToHE:
 
         sql = u"""SELECT count(*) AS anzahl FROM flaechen{auswahl}""".format(auswahl=auswahl)
 
-        try:
-            self.dbQK.sql(sql)
-        except:
-            fehlermeldung(u"QKan_ExportHE (1) SQL-Fehler in SpatiaLite: \n", sql)
-            del self.dbQK
+        if not self.dbQK.sql(sql, u"QKan_ExportHE.application.countselection (1)"):
             return False
         daten = self.dbQK.fetchone()
         if not (daten is None):
@@ -361,11 +357,7 @@ class ExportToHE:
             auswahl = u" WHERE schaechte.teilgebiet in ('{}')".format("', '".join(liste_teilgebiete))
 
         sql = u"""SELECT count(*) AS anzahl FROM schaechte{auswahl}""".format(auswahl=auswahl)
-        try:
-            self.dbQK.sql(sql)
-        except:
-            fehlermeldung(u"QKan_ExportHE (2) SQL-Fehler in SpatiaLite: \n", sql)
-            del self.dbQK
+        if not self.dbQK.sql(sql, u"QKan_ExportHE.application.countselection (2) "):
             return False
         daten = self.dbQK.fetchone()
         if not (daten is None):
@@ -379,11 +371,7 @@ class ExportToHE:
             auswahl = u" WHERE haltungen.teilgebiet in ('{}')".format("', '".join(liste_teilgebiete))
 
         sql = u"""SELECT count(*) AS anzahl FROM haltungen{auswahl}""".format(auswahl=auswahl)
-        try:
-            self.dbQK.sql(sql)
-        except:
-            fehlermeldung(u"QKan_ExportHE (2) SQL-Fehler in SpatiaLite: \n", sql)
-            del self.dbQK
+        if not self.dbQK.sql(sql, u"QKan_ExportHE.application.countselection (3) "):
             return False
         daten = self.dbQK.fetchone()
         if not (daten is None):
@@ -456,11 +444,7 @@ class ExportToHE:
                 WHERE teilgebiet IS NOT NULL AND
                 teilgebiet NOT IN (SELECT tgnam FROM teilgebiete)
                 GROUP BY teilgebiet"""
-        try:
-            self.dbQK.sql(sql)
-        except:
-            fehlermeldung(u"QKan_ExportHE (3) SQL-Fehler in SpatiaLite: \n", sql)
-            del self.dbQK
+        if not self.dbQK.sql(sql, u"QKan_ExportHE.application.run (1) "):
             return False
 
         sql = u"""INSERT INTO teilgebiete (tgnam)
@@ -468,11 +452,7 @@ class ExportToHE:
                 WHERE teilgebiet IS NOT NULL AND
                 teilgebiet NOT IN (SELECT tgnam FROM teilgebiete)
                 GROUP BY teilgebiet"""
-        try:
-            self.dbQK.sql(sql)
-        except:
-            fehlermeldung(u"QKan_ExportHE (4) SQL-Fehler in SpatiaLite: \n", sql)
-            del self.dbQK
+        if not self.dbQK.sql(sql, u"QKan_ExportHE.application.run (2) "):
             return False
 
         sql = u"""INSERT INTO teilgebiete (tgnam)
@@ -480,11 +460,7 @@ class ExportToHE:
                 WHERE teilgebiet IS NOT NULL AND
                 teilgebiet NOT IN (SELECT tgnam FROM teilgebiete)
                 GROUP BY teilgebiet"""
-        try:
-            self.dbQK.sql(sql)
-        except:
-            fehlermeldung(u"QKan_ExportHE (5) SQL-Fehler in SpatiaLite: \n", sql)
-            del self.dbQK
+        if not self.dbQK.sql(sql, u"QKan_ExportHE.application.run (3) "):
             return False
 
         self.dbQK.commit()
@@ -498,7 +474,8 @@ class ExportToHE:
 
         # Abfragen der Tabelle teilgebiete nach Teilgebieten
         sql = 'SELECT "tgnam" FROM "teilgebiete" GROUP BY "tgnam"'
-        self.dbQK.sql(sql)
+        if not self.dbQK.sql(sql, u"QKan_ExportHE.application.run (4) "):
+            return False
         daten = self.dbQK.fetchall()
         self.dlg.lw_teilgebiete.clear()
 
@@ -524,6 +501,12 @@ class ExportToHE:
         else:
             autokorrektur = True
         self.dlg.cb_autokorrektur.setChecked(autokorrektur)
+
+        # Festlegung des Fangradius
+        if 'fangradius' in self.config:
+            fangradius = self.config['fangradius']
+        else:
+            fangradius = u'0.1'
 
         # Formular anzeigen
 
@@ -582,6 +565,7 @@ class ExportToHE:
             self.config['datenbanktyp'] = datenbanktyp
             self.config['liste_teilgebiete'] = liste_teilgebiete
             self.config['autokorrektur'] = autokorrektur
+            self.config['fangradius'] = fangradius
             for el in check_export:
                 self.config[el] = check_export[el]
 
@@ -590,4 +574,4 @@ class ExportToHE:
                 fileconfig.write(json.dumps(self.config))
 
             exportKanaldaten(iface, database_HE, dbtemplate_HE, self.dbQK, liste_teilgebiete, autokorrektur, 
-                             0.1, datenbanktyp, check_export)
+                             fangradius, datenbanktyp, check_export)
