@@ -26,7 +26,7 @@ import os
 from PyQt4 import QtGui, uic
 
 FORM_CLASS_import, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'resources', 'application_import.ui'))
+    os.path.dirname(__file__), 'res', 'application_import.ui'))
 
 
 class ImportFromHEDialog(QtGui.QDialog, FORM_CLASS_import):
@@ -41,7 +41,7 @@ class ImportFromHEDialog(QtGui.QDialog, FORM_CLASS_import):
         self.setupUi(self)
 
 FORM_CLASS_results, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'resources', 'application_results.ui'))
+    os.path.dirname(__file__), 'res', 'application_results.ui'))
 
 
 class ResultsFromHEDialog(QtGui.QDialog, FORM_CLASS_results):
