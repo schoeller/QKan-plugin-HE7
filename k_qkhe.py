@@ -45,7 +45,7 @@ logger = logging.getLogger('QKan')
 progress_bar = None
 
 def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete, autokorrektur, 
-                     fangradius=0.1, datenbanktyp=u'spatialite', check_export={}):
+                     fangradius=0.1, mindestflaeche=0.5 , datenbanktyp=u'spatialite', check_export={}):
     '''Export der Kanaldaten aus einer QKan-SpatiaLite-Datenbank und Schreiben in eine HE-Firebird-Datenbank.
 
     :database_HE:           Pfad zur HE-Firebird-Datenbank
@@ -65,17 +65,20 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                             abgebrochen.
     :type autokorrektur:    String
 
-    :fangradius:         Suchradius, mit dem an den Enden der Verknüpfungen (linkfl, linksw) eine 
-                         Haltung bzw. ein Einleitpunkt zugeordnet wird. 
-    :type fangradius:    Float
+    :fangradius:            Suchradius, mit dem an den Enden der Verknüpfungen (linkfl, linksw) eine 
+                            Haltung bzw. ein Einleitpunkt zugeordnet wird. 
+    :type fangradius:       Float
 
-    :datenbanktyp:       Typ der Datenbank (SpatiaLite, PostGIS)
-    :type datenbanktyp:  String
+    :mindestflaeche:        Mindestflächengröße bei Einzelflächen und Teilflächenstücken
+    :type mindestflaeche:   Real
+    
+    :datenbanktyp:          Typ der Datenbank (SpatiaLite, PostGIS)
+    :type datenbanktyp:     String
 
-    :check_export:       Liste von Export-Optionen
-    :type check_export:  Dictionary
+    :check_export:          Liste von Export-Optionen
+    :type check_export:     Dictionary
 
-    :returns: void
+    :returns:               void
     '''
 
     # Statusmeldung in der Anzeige
@@ -1072,10 +1075,10 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
               FROM flintersect AS fi
               INNER JOIN haltungen AS ha
               ON fi.haltnam = ha.haltnam
-              WHERE area(fi.geom) > 0.1{auswahl}
+              WHERE area(fi.geom) > {mindestflaeche}{auswahl}
               GROUP BY ha.haltnam, fi.abflussparameter, fi.regenschreiber, 
                        fi.speicherzahl, 
-                       fi.abflusstyp, fi.neigkl""".format(auswahl=auswahl)
+                       fi.abflusstyp, fi.neigkl""".format(mindestflaeche=mindestflaeche, auswahl=auswahl)
             logger.debug(u'combine_flaechenrw = True')
             logger.debug(u'Abfrage zum Export der Flächendaten: \n{}'.format(sql))
         else:
@@ -1101,7 +1104,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
               fliesszeit, fliesszeitkanal, flaeche, regenschreiber, abflussparameter,
               createdat, kommentar
               FROM flintersect AS fi
-              WHERE flaeche > 0.00001{auswahl}""".format(auswahl=auswahl)
+              WHERE flaeche > {mindestflaeche}{auswahl}""".format(mindestflaeche=mindestflaeche, auswahl=auswahl)
             logger.debug(u'combine_flaechenrw = False')
             logger.debug(u'Abfrage zum Export der Flächendaten: \n{}'.format(sql))
 
@@ -1487,7 +1490,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
         # Nur Daten fuer ausgewaehlte Teilgebiete
 
         if len(liste_teilgebiete) != 0:
-            auswahl = u" WHERE teilgebiet in ('{}')".format(u"', '".join(liste_teilgebiete))
+            auswahl = u" and teilgebiet in ('{}')".format(u"', '".join(liste_teilgebiete))
         else:
             auswahl = u""
 
