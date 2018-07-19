@@ -34,7 +34,7 @@ import slider as s
 from Enums import SliderMode, Type, LayerType
 from application_dialog import LaengsschnittDialog
 from ganglinie import Ganglinie
-from qkan import Dummy
+from qkan_he7 import Dummy
 from qkan.database.fbfunc import FBConnection
 from qkan.database.navigation import Navigator
 

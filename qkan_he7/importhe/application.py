@@ -37,7 +37,7 @@ import resources
 from application_dialog import ImportFromHEDialog, ResultsFromHEDialog
 from import_from_he import importKanaldaten
 from results_from_he import importResults
-from qkan import Dummy
+from qkan_he7 import Dummy
 # noinspection PyUnresolvedReferences
 
 LOGGER = logging.getLogger(u'QKan')

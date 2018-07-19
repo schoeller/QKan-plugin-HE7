@@ -38,7 +38,7 @@ import resources
 # Import the code for the dialog
 from application_dialog import ExportToHEDialog
 from k_qkhe import exportKanaldaten
-from qkan import Dummy
+from qkan_he7 import Dummy
 from qkan.database.dbfunc import DBConnection
 from qkan.database.qkan_utils import get_database_QKan, get_editable_layers, fortschritt, fehlermeldung
 
