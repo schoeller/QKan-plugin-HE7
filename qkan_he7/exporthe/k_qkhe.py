@@ -1086,7 +1086,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
         1 - Fließzeiten                                          x          x
         2 - Schwerpunktfließzeit                       x
 
-        In der QKan-Datenbank sind Fz_SschwP und Fz_oberfl zu einem Feld zusammengefasst (fliesszeit)
+        In der QKan-Datenbank sind Fz_SschwP und Fz_oberfl zu einem Feld zusammengefasst (fliesszeitflaeche)
 
         Befestigte Flächen"""
 
@@ -1100,27 +1100,6 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
             del dbHE            # Im Fehlerfall wird dbQK in updatelinkfl geschlossen. 
             fehlermeldung(u'Fehler beim Update der Flächen-Verknüpfungen', 
                           u'Der logische Cache konnte nicht aktualisiert werden.')
-        
-        # Vor dem Export: Prüfung, ob die Verknüpfungen in Ordnung sind
-        # kommt in den nächsten Tagen
-        # sql = u'''
-            # SELECT 
-                # lf.flnam AS "linkfl_nam", 
-                # fl.flnam AS "flaech_nam",
-                # ha.haltnam AS "haltung_nam",
-                # tg.flnam AS "tezg_nam",
-                # fl.aufteilen = "ja" and fl.aufteilen IS NOT NULL AS "aufteilen", count(*) AS Anzahl
-            # FROM linkfl AS lf
-            # LEFT JOIN flaechen AS fl
-            # ON lf.flnam = fl.flnam
-            # LEFT JOIN tezg AS tg
-            # ON lf.tezgnam = tg.flnam
-            # LEFT JOIN haltungen AS ha
-            # ON lf.haltnam = ha.haltnam
-            # GROUP BY lf.flnam, fl.flnam, tg.flnam
-            # HAVING Anzahl > 1 or flaech_nam IS NULL or haltung_nam IS NULL
-            # ORDER BY Anzahl DESC'''
-
 
         # Zu verschneidende zusammen mit nicht zu verschneidene Flächen exportieren
 
@@ -1133,9 +1112,9 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
         if check_export['combine_flaechenrw']:
             sql = u"""
               WITH flintersect AS (
-                SELECT lf.flnam AS flnam, lf.pk AS pl, lf.haltnam AS haltnam, fl.neigkl AS neigkl, fl.abflusstyp AS abflusstyp, 
-                  fl.speicherzahl AS speicherzahl, fl.speicherkonst AS speicherkonst,
-                  fl.fliesszeit AS fliesszeit, fl.fliesszeitkanal AS fliesszeitkanal,
+                SELECT lf.flnam AS flnam, lf.pk AS pl, lf.haltnam AS haltnam, fl.neigkl AS neigkl, lf.abflusstyp AS abflusstyp, 
+                  lf.speicherzahl AS speicherzahl, lf.speicherkonst AS speicherkonst,
+                  lf.fliesszeitflaeche AS fliesszeitflaeche, lf.fliesszeitkanal AS fliesszeitkanal,
                   fl.regenschreiber AS regenschreiber,
                   fl.abflussparameter AS abflussparameter, fl.createdat AS createdat,
                   fl.kommentar AS kommentar, 
@@ -1148,7 +1127,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
               SELECT substr(printf('%s-%d', fi.flnam, fi.pl),1,30) AS flnam, 
                 ha.haltnam AS haltnam, fi.neigkl AS neigkl,
                 fi.abflusstyp AS abflusstyp, fi.speicherzahl AS speicherzahl, avg(fi.speicherkonst) AS speicherkonst,
-                max(fi.fliesszeit) AS fliesszeit, max(fi.fliesszeitkanal) AS fliesszeitkanal,
+                max(fi.fliesszeitflaeche) AS fliesszeitflaeche, max(fi.fliesszeitkanal) AS fliesszeitkanal,
                 sum(area(fi.geom)/10000) AS flaeche, fi.regenschreiber AS regenschreiber,
                 abflussparameter AS abflussparameter, max(fi.createdat) AS createdat,
                 max(fi.kommentar) AS kommentar
@@ -1165,8 +1144,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
               WITH flintersect AS (
                 SELECT substr(printf('%s-%d', fl.flnam, lf.pk),1,30) AS flnam, 
                   ha.haltnam AS haltnam, fl.neigkl AS neigkl,
-                  fl.abflusstyp AS abflusstyp, fl.speicherzahl AS speicherzahl, fl.speicherkonst AS speicherkonst,
-                  fl.fliesszeit AS fliesszeit, fl.fliesszeitkanal AS fliesszeitkanal,
+                  lf.abflusstyp AS abflusstyp, lf.speicherzahl AS speicherzahl, lf.speicherkonst AS speicherkonst,
+                  lf.fliesszeitflaeche AS fliesszeitflaeche, lf.fliesszeitkanal AS fliesszeitkanal,
                   CASE WHEN fl.aufteilen IS NULL or fl.aufteilen <> 'ja' THEN area(fl.geom)/10000 
                   ELSE area(CastToMultiPolygon(intersection(fl.geom,tg.geom)))/10000 END AS flaeche, 
                   fl.regenschreiber AS regenschreiber,
@@ -1180,7 +1159,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                 LEFT JOIN tezg AS tg
                 ON lf.tezgnam = tg.flnam)
               SELECT flnam, haltnam, neigkl, abflusstyp, speicherzahl, speicherkonst, 
-              fliesszeit, fliesszeitkanal, flaeche, regenschreiber, abflussparameter,
+              fliesszeitflaeche, fliesszeitkanal, flaeche, regenschreiber, abflussparameter,
               createdat, kommentar
               FROM flintersect AS fi
               WHERE flaeche*10000 > {mindestflaeche}{auswahl}""".format(mindestflaeche=mindestflaeche, auswahl=auswahl)
@@ -1202,7 +1181,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
             # In allen Feldern None durch NULL ersetzen
             (flnam, haltnam, neigkl,
              abflusstyp, speicherzahl, speicherkonst,
-             fliesszeit, fliesszeitkanal,
+             fliesszeitflaeche, fliesszeitkanal,
              flaeche, regenschreiber,
              abflussparameter, createdat_t,
              kommentar) = \
@@ -1240,23 +1219,23 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
             else:
                 speicherkonst = '0'
 
-            if fliesszeit != u'NULL':
-                fliesszeit = '{0:.2f}'.format(fliesszeit)
+            if fliesszeitflaeche != u'NULL':
+                fliesszeitflaeche = '{0:.2f}'.format(fliesszeitflaeche)
             else:
-                fliesszeit = '0'
+                fliesszeitflaeche = '0'
 
             if fliesszeitkanal != u'NULL':
                 fliesszeitkanal = '{0:.2f}'.format(fliesszeitkanal)
             else:
                 fliesszeitkanal = '0'
 
-            # Feld "fliesszeit" in QKan entspricht je nach he_typ zwei unterschiedlichen Feldern in HE, s.o.
+            # Feld "fliesszeitflaeche" in QKan entspricht je nach he_typ zwei unterschiedlichen Feldern in HE, s.o.
             fliesszeitschwerp = 0.
             fliesszeitoberfl = 0.
             if he_typ == 1:
-                fliesszeitoberfl = fliesszeit
+                fliesszeitoberfl = fliesszeitflaeche
             elif he_typ == 2:
-                fliesszeitschwerp = fliesszeit
+                fliesszeitschwerp = fliesszeitflaeche
 
             # Standardwerte, falls keine Vorgaben
             if createdat_t == u'NULL':
@@ -1575,7 +1554,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
             return False
 
         if not updatelinksw(dbQK, fangradius):
-            del dbHE            # Im Fehlerfall wird dbQK in updatelinkfl geschlossen. 
+            del dbHE            # Im Fehlerfall wird dbQK in updatelinksw geschlossen. 
             fehlermeldung(u'Fehler beim Update der Einzeleinleiter-Verknüpfungen', 
                           u'Der logische Cache konnte nicht aktualisiert werden.')
 
