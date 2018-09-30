@@ -241,12 +241,6 @@ class ImportFromHE:
             projectfile = ''
         self.dlg_he.tf_projectFile.setText(projectfile)
 
-        if 'check_inittab' in self.config:
-            check_inittab = self.config['check_inittab']
-        else:
-            check_inittab = True
-        self.dlg_he.cb_import_tabinit.setChecked(check_inittab)
-
         # Ende Eigene Funktionen ---------------------------------------------------
 
 
@@ -268,7 +262,6 @@ class ImportFromHE:
             database_QKan = self.dlg_he.tf_qkanDB.text()
             projectfile = self.dlg_he.tf_projectFile.text()
             self.epsg = self.dlg_he.tf_epsg.text()
-            check_inittab = self.dlg_he.cb_import_tabinit.isChecked()
 
             # Konfigurationsdaten schreiben
 
@@ -276,14 +269,13 @@ class ImportFromHE:
             self.config['database_QKan'] = database_QKan
             self.config['database_HE'] = database_HE
             self.config['projectfile'] = projectfile
-            self.config['check_inittab'] = check_inittab
 
             with open(self.configfil, 'w') as fileconfig:
                 fileconfig.write(json.dumps(self.config))
 
             # Start der Verarbeitung
 
-            importKanaldaten(database_HE, database_QKan, projectfile, self.epsg, check_inittab)
+            importKanaldaten(database_HE, database_QKan, projectfile, self.epsg)
 
     # Formularfunktionen -------------------------------------------------------
 

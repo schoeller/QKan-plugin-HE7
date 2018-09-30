@@ -46,7 +46,7 @@ from qgis.utils import iface, pluginDirectory
 from qkan.database.dbfunc import DBConnection
 from qkan.database.fbfunc import FBConnection
 
-from qkan.database.qkan_utils import fortschritt, fehlermeldung
+from qkan.database.qkan_utils import fortschritt, fehlermeldung, evalNodeTypes
 
 logger = logging.getLogger(u'QKan')
 
@@ -54,7 +54,7 @@ logger = logging.getLogger(u'QKan')
 # ------------------------------------------------------------------------------
 # Hauptprogramm
 
-def importKanaldaten(database_HE, database_QKan, projectfile, epsg, check_tabinit,
+def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
                      dbtyp=u'SpatiaLite'):
     '''Import der Kanaldaten aus einer HE-Firebird-Datenbank und Schreiben in eine QKan-SpatiaLite-Datenbank.
 
@@ -81,6 +81,8 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg, check_tabini
         return None
 
     dbQK = DBConnection(dbname=database_QKan, epsg=epsg)  # Datenbankobjekt der QKan-Datenbank zum Schreiben
+    if not dbQK.updatestatus:
+        return None
 
     if dbQK is None:
         fehlermeldung(u"Fehler in QKan_Import_from_HE",
@@ -90,54 +92,49 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg, check_tabini
     # Referenztabellen laden. 
 
     # Entwässerungssystem. Attribut [bezeichnung] enthält die Bezeichnung des Benutzers.
+    ref_entwart = {}
     sql = u'SELECT he_nr, bezeichnung FROM entwaesserungsarten'
     if not dbQK.sql(sql, u'importkanaldaten_he (1)'):
         return None
     daten = dbQK.fetchall()
-    ref_entwart = {}
     for el in daten:
         ref_entwart[el[0]] = el[1]
 
     # Pumpentypen. Attribut [bezeichnung] enthält die Bezeichnung des Benutzers.
+    ref_pumpentyp = {}
     sql = u'SELECT he_nr, bezeichnung FROM pumpentypen'
     if not dbQK.sql(sql, u'importkanaldaten_he (2)'):
         return None
     daten = dbQK.fetchall()
-    ref_pumpentyp = {}
     for el in daten:
         ref_pumpentyp[el[0]] = el[1]
 
     # Profile. Attribut [profilnam] enthält die Bezeichnung des Benutzers. Dies kann auch ein Kürzel sein.
+    ref_profil = {}
     sql = u'SELECT he_nr, profilnam FROM profile'
     if not dbQK.sql(sql, u'importkanaldaten_he (3)'):
         return None
     daten = dbQK.fetchall()
-    ref_profil = {}
     for el in daten:
         ref_profil[el[0]] = el[1]
 
     # Auslasstypen.
+    ref_auslasstypen = {}
     sql = u'SELECT he_nr, bezeichnung FROM auslasstypen'
     if not dbQK.sql(sql, u'importkanaldaten_he (4)'):
         return None
     daten = dbQK.fetchall()
-    ref_auslasstypen = {}
     for el in daten:
         ref_auslasstypen[el[0]] = el[1]
 
     # Simulationsstatus
+    ref_simulationsstatus = {}
     sql = u'SELECT he_nr, bezeichnung FROM simulationsstatus'
     if not dbQK.sql(sql, u'importkanaldaten_he (5)'):
         return None
     daten = dbQK.fetchall()
-    ref_simulationsstatus = {}
     for el in daten:
         ref_simulationsstatus[el[0]] = el[1]
-
-    # ------------------------------------------------------------------------------
-    # Daten aus den Referenztabellen der HE-Datenbank übernehmen
-
-    #    todo...
 
 
     # ------------------------------------------------------------------------------
@@ -146,10 +143,10 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg, check_tabini
     # Werte 'Freispiegel', 'Druckabfluss', 'Abfluss im offenen Profil' anbietet
 
     # Tabelle in QKan-Datenbank leeren
-    if check_tabinit:
-        sql = u'DELETE FROM haltungen'
-        if not dbQK.sql(sql, u'importkanaldaten_he (6)'):
-            return None
+    # if check_tabinit:
+        # sql = u'DELETE FROM haltungen'
+        # if not dbQK.sql(sql, u'importkanaldaten_he (6)'):
+            # return None
 
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
@@ -290,10 +287,10 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg, check_tabini
 
 
     # Tabelle in QKan-Datenbank leeren
-    if check_tabinit:
-        sql = u'DELETE FROM schaechte'
-        if not dbQK.sql(sql, u'importkanaldaten_he (11)'):
-            return None
+    # if check_tabinit:
+        # sql = u'DELETE FROM schaechte'
+        # if not dbQK.sql(sql, u'importkanaldaten_he (11)'):
+            # return None
 
     # Daten aus ITWH-Datenbank abfragen
     sql = u'''
@@ -544,10 +541,10 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg, check_tabini
     # Pumpen
 
     # Tabelle in QKan-Datenbank leeren
-    if check_tabinit:
-        sql = u'DELETE FROM pumpen'
-        if not dbQK.sql(sql, u'importkanaldaten_he (22)'):
-            return None
+    # if check_tabinit:
+        # sql = u'DELETE FROM pumpen'
+        # if not dbQK.sql(sql, u'importkanaldaten_he (22)'):
+            # return None
 
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
@@ -654,10 +651,10 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg, check_tabini
     # Wehre
 
     # Tabelle in QKan-Datenbank leeren
-    if check_tabinit:
-        sql = u'DELETE FROM wehre'
-        if not dbQK.sql(sql, u'importkanaldaten_he (26)'):
-            return None
+    # if check_tabinit:
+        # sql = u'DELETE FROM wehre'
+        # if not dbQK.sql(sql, u'importkanaldaten_he (26)'):
+            # return None
 
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
@@ -813,10 +810,10 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg, check_tabini
     # Speicherkennlinien
 
     # Tabelle in QKan-Datenbank leeren
-    if check_tabinit:
-        sql = u'DELETE FROM speicherkennlinien'
-        if not dbQK.sql(sql, u'importkanaldaten_he (31)'):
-            return None
+    # if check_tabinit:
+        # sql = u'DELETE FROM speicherkennlinien'
+        # if not dbQK.sql(sql, u'importkanaldaten_he (31)'):
+            # return None
 
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
@@ -853,10 +850,10 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg, check_tabini
     # Sonderprofildaten
 
     # Tabelle in QKan-Datenbank leeren
-    if check_tabinit:
-        sql = u'DELETE FROM profildaten'
-        if not dbQK.sql(sql, u'importkanaldaten_he (33)'):
-            return None
+    # if check_tabinit:
+        # sql = u'DELETE FROM profildaten'
+        # if not dbQK.sql(sql, u'importkanaldaten_he (33)'):
+            # return None
 
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
@@ -893,10 +890,10 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg, check_tabini
     # Abflussparameter
 
     # Tabelle in QKan-Datenbank leeren
-    if check_tabinit:
-        sql = u'DELETE FROM abflussparameter'
-        if not dbQK.sql(sql, u'importkanaldaten_he (35)'):
-            return None
+    # if check_tabinit:
+        # sql = u'DELETE FROM abflussparameter'
+        # if not dbQK.sql(sql, u'importkanaldaten_he (35)'):
+            # return None
 
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
@@ -967,103 +964,10 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg, check_tabini
             return None
     dbQK.commit()
 
-    # ------------------------------------------------------------------------------
-    # Schachttypen auswerten. Dies geschieht ausschließlich mit SQL-Abfragen
 
-    # -- Anfangsschächte: Schächte ohne Haltung oben
-    sql_typAnf = u'''
-        UPDATE schaechte SET knotentyp = 'Anfangsschacht' WHERE schaechte.schnam IN
-        (SELECT t_sch.schnam
-        FROM schaechte AS t_sch 
-        LEFT JOIN haltungen AS t_hob
-        ON t_sch.schnam = t_hob.schoben
-        LEFT JOIN haltungen AS t_hun
-        ON t_sch.schnam = t_hun.schunten
-        WHERE t_hun.pk IS NULL)'''
+    # Schachttypen auswerten
+    evalNodeTypes(dbQK)                     # in qkan.database.qkan_utils
 
-    # -- Endschächte: Schächte ohne Haltung unten
-    sql_typEnd = u'''
-        UPDATE schaechte SET knotentyp = 'Endschacht' WHERE schaechte.schnam IN
-        (SELECT t_sch.schnam
-        FROM schaechte AS t_sch 
-        LEFT JOIN haltungen AS t_hob
-        ON t_sch.schnam = t_hob.schunten
-        LEFT JOIN haltungen AS t_hun
-        ON t_sch.schnam = t_hun.schoben
-        WHERE t_hun.pk IS NULL)'''
-
-    # -- Hochpunkt: 
-    sql_typHoch = u'''
-        UPDATE schaechte SET knotentyp = 'Hochpunkt' WHERE schaechte.schnam IN
-        ( SELECT t_sch.schnam
-          FROM schaechte AS t_sch 
-          JOIN haltungen AS t_hob
-          ON t_sch.schnam = t_hob.schunten
-          JOIN haltungen AS t_hun
-          ON t_sch.schnam = t_hun.schoben
-          JOIN schaechte AS t_sun
-          ON t_sun.schnam = t_hun.schunten
-          JOIN schaechte AS t_sob
-          ON t_sob.schnam = t_hob.schunten
-          WHERE ifnull(t_hob.sohleunten,t_sch.sohlhoehe)>ifnull(t_hob.sohleoben,t_sob.sohlhoehe) AND 
-                ifnull(t_hun.sohleoben,t_sch.sohlhoehe)>ifnull(t_hun.sohleunten,t_sun.sohlhoehe))'''
-
-    # -- Tiefpunkt:
-    sql_typTief = u'''
-        UPDATE schaechte SET knotentyp = 'Tiefpunkt' WHERE schaechte.schnam IN
-        ( SELECT t_sch.schnam
-          FROM schaechte AS t_sch 
-          JOIN haltungen AS t_hob
-          ON t_sch.schnam = t_hob.schunten
-          JOIN haltungen AS t_hun
-          ON t_sch.schnam = t_hun.schoben
-          JOIN schaechte AS t_sun
-          ON t_sun.schnam = t_hun.schunten
-          JOIN schaechte AS t_sob
-          ON t_sob.schnam = t_hob.schunten
-          WHERE ifnull(t_hob.sohleunten,t_sch.sohlhoehe)<ifnull(t_hob.sohleoben,t_sob.sohlhoehe) AND 
-                ifnull(t_hun.sohleoben,t_sch.sohlhoehe)<ifnull(t_hun.sohleunten,t_sun.sohlhoehe))'''
-
-    # -- Verzweigung:
-    sql_typZweig = u'''
-        UPDATE schaechte SET knotentyp = 'Verzweigung' WHERE schaechte.schnam IN
-        ( SELECT t_sch.schnam
-          FROM schaechte AS t_sch 
-          JOIN haltungen AS t_hun
-          ON t_sch.schnam = t_hun.schoben
-          GROUP BY t_sch.pk
-          HAVING count(*) > 1)'''
-
-    # -- Einzelschacht:
-    sql_typEinzel = u'''
-        UPDATE schaechte SET knotentyp = 'Einzelschacht' WHERE schaechte.schnam IN
-        ( SELECT t_sch.schnam 
-          FROM schaechte AS t_sch 
-          LEFT JOIN haltungen AS t_hun
-          ON t_sch.schnam = t_hun.schoben
-          LEFT JOIN haltungen AS t_hob
-          ON t_sch.schnam = t_hob.schunten
-          WHERE t_hun.pk IS NULL AND t_hob.pk IS NULL)'''
-
-    if not dbQK.sql(sql_typAnf, u'importkanaldaten_he (39)'):
-        return None
-
-    if not dbQK.sql(sql_typEnd, u'importkanaldaten_he (40)'):
-        return None
-
-    if not dbQK.sql(sql_typHoch, u'importkanaldaten_he (41)'):
-        return None
-
-    if not dbQK.sql(sql_typTief, u'importkanaldaten_he (42)'):
-        return None
-
-    if not dbQK.sql(sql_typZweig, u'importkanaldaten_he (43)'):
-        return None
-
-    if not dbQK.sql(sql_typEinzel, u'importkanaldaten_he (44)'):
-        return None
-
-    dbQK.commit()
 
     # --------------------------------------------------------------------------
     # Zoom-Bereich für die Projektdatei vorbereiten
@@ -1122,7 +1026,7 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg, check_tabini
     # Projektdatei schreiben, falls ausgewählt
 
     if projectfile is not None and projectfile != u'':
-        templatepath = os.path.join(pluginDirectory('qkan'), u"database/templates")
+        templatepath = os.path.join(pluginDirectory('qkan'), u"templates")
         projecttemplate = os.path.join(templatepath, u"projekt.qgs")
         projectpath = os.path.dirname(projectfile)
         if os.path.dirname(database_QKan) == projectpath:

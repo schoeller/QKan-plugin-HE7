@@ -59,7 +59,7 @@ class ExportToHE:
         :type iface: QgsInterface
         """
 
-        self.templatepath = os.path.join(pluginDirectory('qkan'), u"database/templates")
+        self.templatepath = os.path.join(pluginDirectory('qkan'), u"templates")
 
         # Save reference to the QGIS interface
         self.iface = iface
@@ -470,6 +470,8 @@ class ExportToHE:
 
         # Datenbankverbindung für Abfragen
         self.dbQK = DBConnection(dbname=database_QKan)  # Datenbankobjekt der QKan-Datenbank zum Lesen
+        if not self.dbQK.updatestatus:
+            return None
         if self.dbQK is None:
             fehlermeldung("Fehler in QKan_CreateUnbefFl",
                           u'QKan-Datenbank {:s} wurde nicht gefunden!\nAbbruch!'.format(database_QKan))
