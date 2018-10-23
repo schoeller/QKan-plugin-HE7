@@ -76,6 +76,8 @@ def importResults(database_HE, database_QKan, qml_choice, qmlfileResults, epsg=2
         return None
 
     dbQK = DBConnection(dbname=database_QKan)  # Datenbankobjekt der QKan-Datenbank zum Schreiben
+    if not dbQK.updatestatus:
+        return None
 
     if dbQK is None:
         fehlermeldung(u"Fehler in QKan_Import_from_HE",
@@ -153,7 +155,7 @@ def importResults(database_HE, database_QKan, qml_choice, qmlfileResults, epsg=2
         QgsMapLayerRegistry.instance().addMapLayer(vlayer)
 
         # Stilvorlage nach Benutzerwahl laden
-        templatepath = os.path.join(pluginDirectory('qkan'), u"database/templates")
+        templatepath = os.path.join(pluginDirectory('qkan'), u"templates")
         if qml_choice == 'uebh':
             template = os.path.join(templatepath, u"Überstauhäufigkeit.qml")
             try:

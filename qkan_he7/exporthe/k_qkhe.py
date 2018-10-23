@@ -124,17 +124,23 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
     # --------------------------------------------------------------------------------------------------
     # Zur Abschaetzung der voraussichtlichen Laufzeit
 
-    dbQK.sql(u"SELECT count(*) AS n FROM schaechte")
-    anzdata = float(dbQK.fetchone()[0])
-    fortschritt(u"Anzahl Schächte: {}".format(anzdata))
+    # if not dbQK.sql(u"SELECT count(*) AS n FROM schaechte", u"k_qkhe.laufzeit (1)")
+        # del dbHE
+        # return False
+    # anzdata = float(dbQK.fetchone()[0])
+    # fortschritt(u"Anzahl Schächte: {}".format(anzdata))
 
-    dbQK.sql(u"SELECT count(*) AS n FROM haltungen")
-    anzdata += float(dbQK.fetchone()[0])
-    fortschritt(u"Anzahl Haltungen: {}".format(anzdata))
+    # if not dbQK.sql(u"SELECT count(*) AS n FROM haltungen", u"k_qkhe.laufzeit (2)")
+        # del dbHE
+        # return False
+    # anzdata += float(dbQK.fetchone()[0])
+    # fortschritt(u"Anzahl Haltungen: {}".format(anzdata))
 
-    dbQK.sql(u"SELECT count(*) AS n FROM flaechen")
-    anzdata += float(dbQK.fetchone()[0]) * 2
-    fortschritt(u"Anzahl Flächen: {}".format(anzdata))
+    # if not dbQK.sql(u"SELECT count(*) AS n FROM flaechen", u"k_qkhe.laufzeit (3)")
+        # del dbHE
+        # return False
+    # anzdata += float(dbQK.fetchone()[0]) * 2
+    # fortschritt(u"Anzahl Flächen: {}".format(anzdata))
 
 
     # --------------------------------------------------------------------------------------------
