@@ -39,7 +39,7 @@ import shutil
 import xml.etree.ElementTree as ET
 
 from PyQt4.QtCore import QFileInfo
-from qgis.core import QgsMessageLog, QgsProject, QgsCoordinateReferenceSystem
+from qgis.core import QgsMessageLog, QgsProject, QgsCoordinateReferenceSystem, QgsMapLayerRegistry
 from qgis.gui import QgsMessageBar
 from qgis.utils import iface, pluginDirectory
 
@@ -81,7 +81,7 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
         return None
 
     dbQK = DBConnection(dbname=database_QKan, epsg=epsg)  # Datenbankobjekt der QKan-Datenbank zum Schreiben
-    if not dbQK.updatestatus:
+    if not dbQK.connected:
         return None
 
     if dbQK is None:
@@ -1150,8 +1150,7 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     project.read(QFileInfo(projectfile))  # read the new project file
     logger.debug(u'Geladene Projektdatei: {}'.format(project.fileName()))
 
-    layerReg = QgsMapLayerRegistry()
-    layerReg.reloadAllLayers()
+    QgsMapLayerRegistry.instance().reloadAllLayers()
 
 
 # ----------------------------------------------------------------------------------------------------------------------
