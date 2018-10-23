@@ -1150,6 +1150,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     project.read(QFileInfo(projectfile))  # read the new project file
     logger.debug(u'Geladene Projektdatei: {}'.format(project.fileName()))
 
+    layerReg = QgsMapLayerRegistry()
+    layerReg.reloadAllLayers()
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 
