@@ -38,7 +38,7 @@ from qkan.linkflaechen.updatelinks import updatelinkfl, updatelinksw, updatelink
 
 # Referenzlisten
 from qkan.database.reflists import abflusstypen
-from qkan.database.qkan_utils import versionolder
+from qkan.database.qkan_database import versionolder
 
 logger = logging.getLogger('QKan')
 
