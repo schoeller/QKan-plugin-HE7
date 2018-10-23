@@ -76,7 +76,7 @@ def importResults(database_HE, database_QKan, qml_choice, qmlfileResults, epsg=2
         return None
 
     dbQK = DBConnection(dbname=database_QKan)  # Datenbankobjekt der QKan-Datenbank zum Schreiben
-    if not dbQK.updatestatus:
+    if not dbQK.connected:
         return None
 
     if dbQK is None:
