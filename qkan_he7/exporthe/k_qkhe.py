@@ -48,7 +48,8 @@ progress_bar = None
 # Hauptprogramm ---------------------------------------------------------------------------------------------
 
 def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete, autokorrektur, 
-                     fangradius=0.1, mindestflaeche=0.5 , datenbanktyp=u'spatialite', check_export={}):
+                     fangradius=0.1, mindestflaeche=0.5, mit_verschneidung=True, datenbanktyp=u'spatialite', 
+                     check_export={}):
     '''Export der Kanaldaten aus einer QKan-SpatiaLite-Datenbank und Schreiben in eine HE-Firebird-Datenbank.
 
     :database_HE:           Pfad zur HE-Firebird-Datenbank
@@ -74,7 +75,10 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
 
     :mindestflaeche:        Mindestflächengröße bei Einzelflächen und Teilflächenstücken
     :type mindestflaeche:   Real
-    
+
+    :mit_verschneidung:     Flächen werden mit Haltungsflächen verschnitten (abhängig von Attribut "aufteilen")
+    :type mit_verschneidung: Boolean
+
     :datenbanktyp:          Typ der Datenbank (SpatiaLite, PostGIS)
     :type datenbanktyp:     String
 
@@ -1115,6 +1119,16 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
         else:
             auswahl = u""
 
+        # Verschneidung nur, wenn (mit_verschneidung)
+        if mit_verschneidung:
+            case_verschneidung = "fl.aufteilen IS NULL or fl.aufteilen <> 'ja'"
+            join_verschneidung = """
+                LEFT JOIN tezg AS tg
+                ON lf.tezgnam = tg.flnam"""
+        else:
+            case_verschneidung = "1"
+            join_verschneidung = ""
+
         if check_export['combine_flaechenrw']:
             sql = u"""
               WITH flintersect AS (
@@ -1124,12 +1138,11 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                   fl.regenschreiber AS regenschreiber,
                   fl.abflussparameter AS abflussparameter, fl.createdat AS createdat,
                   fl.kommentar AS kommentar, 
-                  CASE WHEN fl.aufteilen IS NULL or fl.aufteilen <> 'ja' THEN fl.geom ELSE CastToMultiPolygon(intersection(fl.geom,tg.geom)) END AS geom
+                  CASE WHEN {case_verschneidung} THEN fl.geom 
+                  ELSE CastToMultiPolygon(intersection(fl.geom,tg.geom)) END AS geom
                 FROM linkfl AS lf
                 INNER JOIN flaechen AS fl
-                ON lf.flnam = fl.flnam
-                LEFT JOIN tezg AS tg
-                ON lf.tezgnam = tg.flnam)
+                ON lf.flnam = fl.flnam{join_verschneidung})
               SELECT substr(printf('%s-%d', fi.flnam, fi.pl),1,30) AS flnam, 
                 ha.haltnam AS haltnam, fi.neigkl AS neigkl,
                 fi.abflusstyp AS abflusstyp, fi.speicherzahl AS speicherzahl, avg(fi.speicherkonst) AS speicherkonst,
@@ -1142,7 +1155,9 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
               ON fi.haltnam = ha.haltnam
               WHERE area(fi.geom) > {mindestflaeche}{auswahl}
               GROUP BY ha.haltnam, fi.abflussparameter, fi.regenschreiber, fi.speicherzahl, 
-                fi.abflusstyp, fi.neigkl""".format(mindestflaeche=mindestflaeche, auswahl=auswahl)
+                fi.abflusstyp, fi.neigkl""".format(mindestflaeche=mindestflaeche, auswahl=auswahl, 
+                                                    case_verschneidung=case_verschneidung, 
+                                                    join_verschneidung=join_verschneidung)
             logger.debug(u'combine_flaechenrw = True')
             logger.debug(u'Abfrage zum Export der Flächendaten: \n{}'.format(sql))
         else:
@@ -1152,7 +1167,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                   ha.haltnam AS haltnam, fl.neigkl AS neigkl,
                   lf.abflusstyp AS abflusstyp, lf.speicherzahl AS speicherzahl, lf.speicherkonst AS speicherkonst,
                   lf.fliesszeitflaeche AS fliesszeitflaeche, lf.fliesszeitkanal AS fliesszeitkanal,
-                  CASE WHEN fl.aufteilen IS NULL or fl.aufteilen <> 'ja' THEN area(fl.geom)/10000 
+                  CASE WHEN {case_verschneidung} THEN area(fl.geom)/10000 
                   ELSE area(CastToMultiPolygon(intersection(fl.geom,tg.geom)))/10000 END AS flaeche, 
                   fl.regenschreiber AS regenschreiber,
                   fl.abflussparameter AS abflussparameter, fl.createdat AS createdat,
@@ -1161,9 +1176,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                 INNER JOIN flaechen AS fl
                 ON lf.flnam = fl.flnam
                 INNER JOIN haltungen AS ha
-                ON lf.haltnam = ha.haltnam
-                LEFT JOIN tezg AS tg
-                ON lf.tezgnam = tg.flnam)
+                ON lf.haltnam = ha.haltnam{join_verschneidung})
               SELECT flnam, haltnam, neigkl, abflusstyp, speicherzahl, speicherkonst, 
               fliesszeitflaeche, fliesszeitkanal, flaeche, regenschreiber, abflussparameter,
               createdat, kommentar
