@@ -551,6 +551,13 @@ class ExportToHE:
         else:
             fangradius = u'0.1'
 
+        # Haltungsflächen (tezg) berücksichtigen
+        if 'mit_verschneidung' in self.config:
+            mit_verschneidung = self.config['mit_verschneidung']
+        else:
+            mit_verschneidung = True
+        self.dlg.cb_regardTezg.setChecked(mit_verschneidung)
+
         # Mindestflächengröße
         # Kann über Menü "Optionen" eingegeben werden
         if 'mindestflaeche' in self.config:
@@ -577,6 +584,7 @@ class ExportToHE:
             dbtemplate_HE = self.dlg.tf_heDB_template.text()
             datenbanktyp = 'spatialite'
             autokorrektur = self.dlg.cb_autokorrektur.isChecked()
+            mit_verschneidung = self.dlg_cl.cb_regardTezg.isChecked()
 
             check_export = {}
             check_export['export_schaechte'] = self.dlg.cb_export_schaechte.isChecked()
@@ -620,6 +628,7 @@ class ExportToHE:
             self.config['liste_teilgebiete'] = liste_teilgebiete
             self.config['autokorrektur'] = autokorrektur
             self.config['fangradius'] = fangradius
+            self.config['mit_verschneidung'] = mit_verschneidung
             self.config['mindestflaeche'] = mindestflaeche
 
             for el in check_export:
@@ -630,4 +639,4 @@ class ExportToHE:
                 fileconfig.write(json.dumps(self.config))
 
             exportKanaldaten(iface, database_HE, dbtemplate_HE, self.dbQK, liste_teilgebiete, autokorrektur, 
-                             fangradius, mindestflaeche, datenbanktyp, check_export)
+                             fangradius, mindestflaeche, mit_verschneidung, datenbanktyp, check_export)
