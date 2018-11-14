@@ -105,13 +105,13 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
             os.remove(database_HE)
         except BaseException as err:
             fehlermeldung(u'Fehler (33) in QKan_Export', 
-                'Die HE-Datenbank ist schon vorhanden und kann nicht ersetzt werden: {}'.format(repr(err)))
+                u'Die HE-Datenbank ist schon vorhanden und kann nicht ersetzt werden: {}'.format(repr(err)))
             return False
     try:
         shutil.copyfile(dbtemplate_HE, database_HE)
     except BaseException as err:
         fehlermeldung(u'Fehler (34) in QKan_Export', 
-            'Kopieren der Vorlage HE-Datenbank fehlgeschlagen: {}\nVorlage: {}\nZiel: {}\n'.format(repr(err), dbtemplate_HE, database_HE))
+            u'Kopieren der Vorlage HE-Datenbank fehlgeschlagen: {}\nVorlage: {}\nZiel: {}\n'.format(repr(err), dbtemplate_HE, database_HE))
         return False
     fortschritt(u"Firebird-Datenbank aus Vorlage kopiert...", 0.01)
     progress_bar.setValue(1)
@@ -1181,7 +1181,9 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
               fliesszeitflaeche, fliesszeitkanal, flaeche, regenschreiber, abflussparameter,
               createdat, kommentar
               FROM flintersect AS fi
-              WHERE flaeche*10000 > {mindestflaeche}{auswahl}""".format(mindestflaeche=mindestflaeche, auswahl=auswahl)
+              WHERE flaeche*10000 > {mindestflaeche}{auswahl}""".format(mindestflaeche=mindestflaeche, auswahl=auswahl, 
+                                                    case_verschneidung=case_verschneidung, 
+                                                    join_verschneidung=join_verschneidung)
             logger.debug(u'combine_flaechenrw = False')
             logger.debug(u'Abfrage zum Export der Flächendaten: \n{}'.format(sql))
 
@@ -1216,7 +1218,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                 he_typ = 0  # Flächentyp 'Direkt'
             else:
                 if not fehler_abflusstyp:
-                    meldung(u'Datenfehler in Tabelle "flaechen", Feld "abflusstyp"', 'Wert: {}'.format(abflusstyp))
+                    meldung(u'Datenfehler in Tabelle "flaechen", Feld "abflusstyp"', u'Wert: {}'.format(abflusstyp))
                     he_typ = 0  # Flächentyp 'Direkt'
                     fehler_abflusstyp = True
 
