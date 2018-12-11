@@ -1115,9 +1115,11 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
 
         # Nur Daten fuer ausgewaehlte Teilgebiete
         if len(liste_teilgebiete) != 0:
-            auswahl = u" AND ha.teilgebiet in ('{}')".format(u"', '".join(liste_teilgebiete))
+            auswahl_c = u" AND ha.teilgebiet in ('{}')".format(u"', '".join(liste_teilgebiete))
+            auswahl_a = u" WHERE ha.teilgebiet in ('{}')".format(u"', '".join(liste_teilgebiete))
         else:
-            auswahl = u""
+            auswahl_c = u""
+            auswahl_a = u""
 
         # Verschneidung nur, wenn (mit_verschneidung)
         if mit_verschneidung:
@@ -1153,9 +1155,9 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
               FROM flintersect AS fi
               INNER JOIN haltungen AS ha
               ON fi.haltnam = ha.haltnam
-              WHERE area(fi.geom) > {mindestflaeche}{auswahl}
+              WHERE area(fi.geom) > {mindestflaeche}{auswahl_c}
               GROUP BY ha.haltnam, fi.abflussparameter, fi.regenschreiber, fi.speicherzahl, 
-                fi.abflusstyp, fi.neigkl""".format(mindestflaeche=mindestflaeche, auswahl=auswahl, 
+                fi.abflusstyp, fi.neigkl""".format(mindestflaeche=mindestflaeche, auswahl_c=auswahl_c, 
                                                     case_verschneidung=case_verschneidung, 
                                                     join_verschneidung=join_verschneidung)
             logger.debug(u'combine_flaechenrw = True')
@@ -1176,12 +1178,12 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                 INNER JOIN flaechen AS fl
                 ON lf.flnam = fl.flnam
                 INNER JOIN haltungen AS ha
-                ON lf.haltnam = ha.haltnam{join_verschneidung})
+                ON lf.haltnam = ha.haltnam{join_verschneidung}{auswahl_a})
               SELECT flnam, haltnam, neigkl, abflusstyp, speicherzahl, speicherkonst, 
               fliesszeitflaeche, fliesszeitkanal, flaeche, regenschreiber, abflussparameter,
               createdat, kommentar
               FROM flintersect AS fi
-              WHERE flaeche*10000 > {mindestflaeche}{auswahl}""".format(mindestflaeche=mindestflaeche, auswahl=auswahl, 
+              WHERE flaeche*10000 > {mindestflaeche}""".format(mindestflaeche=mindestflaeche, auswahl_a=auswahl_a, 
                                                     case_verschneidung=case_verschneidung, 
                                                     join_verschneidung=join_verschneidung)
             logger.debug(u'combine_flaechenrw = False')
