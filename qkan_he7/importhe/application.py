@@ -109,7 +109,7 @@ class ImportFromHE:
         self.dlg_lz.pb_selectqmlfile.clicked.connect(self.selectqmlfileResults)
 
         # Klick auf eine Option zum Layerstil aktiviert/deaktiviert das Textfeld und die Schaltfläche
-        self.dlg_lz.pb_selectHeDB.clicked.connect(self.selectFile_HeDB)
+        self.dlg_lz.pb_selectHeDB.clicked.connect(self.selectFile_HeErgDB)
         self.dlg_lz.rb_userqml.clicked.connect(self.enable_tf_qmlfile)
         self.dlg_lz.rb_uebh.clicked.connect(self.disable_tf_qmlfile)
         self.dlg_lz.rb_uebvol.clicked.connect(self.disable_tf_qmlfile)
@@ -278,6 +278,17 @@ class ImportFromHE:
             importKanaldaten(database_HE, database_QKan, projectfile, self.epsg)
 
     # Formularfunktionen -------------------------------------------------------
+
+    def selectFile_HeErgDB(self):
+        """Datenbankverbindung zur HE-Ergebnisdatenbank (Firebird) auswaehlen"""
+
+        filename = QFileDialog.getOpenFileName(self.dlg_lz,
+                                               u"Dateinamen der zu lesenden HE-Ergebnisdatenbank auswählen",
+                                               self.default_dir,
+                                               u"*.idbf")
+        if os.path.dirname(filename) != '':
+            os.chdir(os.path.dirname(filename))
+        self.dlg_lz.tf_heDB.setText(filename)
 
     def enable_tf_qmlfile(self):
         '''aktiviert das Textfeld für die qml-Stildatei'''
