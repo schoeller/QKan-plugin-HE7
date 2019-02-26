@@ -156,6 +156,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
     data = dbHE.fetchone()
     nextid = int(data[0]) + 1
     heDBVersion = data[1].split('.')
+    logger.debug(u'HE IDBF-Version {}'.format(heDBVersion))
 
     # --------------------------------------------------------------------------------------------
     # Export der Schaechte
@@ -609,6 +610,23 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
 
         nr0 = nextid
 
+        # Varianten abhängig von HE-Version
+        if versionolder(heDBVersion[0:2], ['7', '8'], 2):
+            logger.debug(u'Version vor 7.8 erkannt')
+            fieldsnew = ''
+            attrsnew = ''
+            valuesnew = ''
+        elif versionolder(heDBVersion[0:2], ['7', '9'], 2):
+            logger.debug(u'Version vor 7.9 erkannt')
+            fieldsnew = ', EINZUGSGEBIET = 0, KONSTANTERZUFLUSSTEZG = 0'
+            attrsnew =  ', EINZUGSGEBIET, KONSTANTERZUFLUSSTEZG'
+            valuesnew = ', 0, 0'
+        else:
+            logger.debug(u'Version 7.9 erkannt')
+            fieldsnew = ', EINZUGSGEBIET = 0, KONSTANTERZUFLUSSTEZG = 0, BEFESTIGTEFLAECHE = 0, UNBEFESTIGTEFLAECHE = 0'
+            attrsnew =  ', EINZUGSGEBIET, KONSTANTERZUFLUSSTEZG, BEFESTIGTEFLAECHE, UNBEFESTIGTEFLAECHE'
+            valuesnew = ', 0, 0, 0, 0'
+
         for attr in dbQK.fetchall():
 
             # In allen Feldern None durch NULL ersetzen
@@ -658,8 +676,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                       GEOMETRIE1={geometrie1}, GEOMETRIE2={geometrie2}, KANALART='{kanalart}',
                       RAUIGKEITSBEIWERT={rauigkeitsbeiwert}, ANZAHL={anzahl},
                       TEILEINZUGSGEBIET='{teileinzugsgebiet}', RUECKSCHLAGKLAPPE={rueckschlagklappe},
-                      KONSTANTERZUFLUSS={konstanterzufluss}, EINZUGSGEBIET={einzugsgebiet},
-                      KONSTANTERZUFLUSSTEZG={konstanterzuflusstezg}, RAUIGKEITSANSATZ={rauigkeitsansatz},
+                      KONSTANTERZUFLUSS={konstanterzufluss},
+                      RAUIGKEITSANSATZ={rauigkeitsansatz},
                       GEFAELLE={gefaelle}, GESAMTFLAECHE={gesamtflaeche}, ABFLUSSART={abflussart},
                       INDIVIDUALKONZEPT={individualkonzept}, HYDRAULISCHERRADIUS={hydraulischerradius},
                       RAUHIGKEITANZEIGE={rauhigkeitanzeige}, PLANUNGSSTATUS={planungsstatus},
@@ -667,7 +685,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                       EREIGNISBILANZIERUNG={ereignisbilanzierung},
                       EREIGNISGRENZWERTENDE={ereignisgrenzwertende},
                       EREIGNISGRENZWERTANFANG={ereignisgrenzwertanfang},
-                      EREIGNISTRENNDAUER={ereignistrenndauer}, EREIGNISINDIVIDUELL={ereignisindividuell}
+                      EREIGNISTRENNDAUER={ereignistrenndauer}, 
+                      EREIGNISINDIVIDUELL={ereignisindividuell}{fieldsnew}
                       WHERE NAME = '{name}';
                       """.format(name=haltnam, schachtoben=schoben, schachtunten=schunten,
                                  laenge=laenge, sohlhoeheoben=sohleoben,
@@ -676,7 +695,6 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                                  geometrie2=breite, kanalart=entw_nr,
                                  rauigkeitsbeiwert=1.5, anzahl=1, teileinzugsgebiet=u'',
                                  rueckschlagklappe=0, konstanterzufluss=0,
-                                 einzugsgebiet=0, konstanterzuflusstezg=0,
                                  rauigkeitsansatz=1, gefaelle=0,
                                  gesamtflaeche=0, abflussart=0,
                                  individualkonzept=0, hydraulischerradius=0,
@@ -684,7 +702,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                                  lastmodified=createdat, materialart=28,
                                  ereignisbilanzierung=0, ereignisgrenzwertende=0,
                                  ereignisgrenzwertanfang=0, ereignistrenndauer=0,
-                                 ereignisindividuell=0)
+                                 ereignisindividuell=0, fieldsnew = fieldsnew)
 
                     if not dbHE.sql(sql, u'dbHE: export_haltungen (1)'):
                         del dbQK
@@ -699,20 +717,21 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                       ( NAME, SCHACHTOBEN, SCHACHTUNTEN, LAENGE, SOHLHOEHEOBEN,
                         SOHLHOEHEUNTEN, PROFILTYP, SONDERPROFILBEZEICHNUNG, GEOMETRIE1,
                         GEOMETRIE2, KANALART, RAUIGKEITSBEIWERT, ANZAHL, TEILEINZUGSGEBIET,
-                        RUECKSCHLAGKLAPPE, KONSTANTERZUFLUSS, EINZUGSGEBIET, KONSTANTERZUFLUSSTEZG,
-                        RAUIGKEITSANSATZ, GEFAELLE, GESAMTFLAECHE, ABFLUSSART, BEFESTIGTEFLAECHE, UNBEFESTIGTEFLAECHE,
+                        RUECKSCHLAGKLAPPE, KONSTANTERZUFLUSS,
+                        RAUIGKEITSANSATZ, GEFAELLE, GESAMTFLAECHE, ABFLUSSART,
                         INDIVIDUALKONZEPT, HYDRAULISCHERRADIUS, RAUHIGKEITANZEIGE, PLANUNGSSTATUS,
                         LASTMODIFIED, MATERIALART, EREIGNISBILANZIERUNG, EREIGNISGRENZWERTENDE,
-                        EREIGNISGRENZWERTANFANG, EREIGNISTRENNDAUER, EREIGNISINDIVIDUELL, ID)
+                        EREIGNISGRENZWERTANFANG, EREIGNISTRENNDAUER, EREIGNISINDIVIDUELL, ID{attrsnew})
                       SELECT
                         '{name}', '{schachtoben}', '{schachtunten}', {laenge}, {sohlhoeheoben},
                         {sohlhoeheunten}, '{profiltyp}', '{sonderprofilbezeichnung}', {geometrie1},
                         {geometrie2}, '{kanalart}', {rauigkeitsbeiwert}, {anzahl}, '{teileinzugsgebiet}',
-                        {rueckschlagklappe}, {konstanterzufluss}, {einzugsgebiet}, {konstanterzuflusstezg},
-                        {rauigkeitsansatz}, {gefaelle}, {gesamtflaeche}, {abflussart}, {befestigte_flaeche}, {unbefestigte_flaeche}, 
+                        {rueckschlagklappe}, {konstanterzufluss},
+                        {rauigkeitsansatz}, {gefaelle}, {gesamtflaeche}, {abflussart}, 
                         {individualkonzept}, {hydraulischerradius}, {rauhigkeitanzeige}, {planungsstatus},
                         '{lastmodified}', {materialart}, {ereignisbilanzierung}, {ereignisgrenzwertende},
-                        {ereignisgrenzwertanfang}, {ereignistrenndauer}, {ereignisindividuell}, {id}
+                        {ereignisgrenzwertanfang}, {ereignistrenndauer}, 
+                        {ereignisindividuell}, {id}{valuesnew}
                       FROM RDB$DATABASE
                       WHERE '{name}' NOT IN (SELECT NAME FROM ROHR);
                       """.format(name=haltnam, schachtoben=schoben, schachtunten=schunten,
@@ -722,7 +741,6 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                                  geometrie2=breite, kanalart=entw_nr,
                                  rauigkeitsbeiwert=1.5, anzahl=1, teileinzugsgebiet=u'',
                                  rueckschlagklappe=0, konstanterzufluss=0,
-                                 einzugsgebiet=0, konstanterzuflusstezg=0,
                                  rauigkeitsansatz=1, gefaelle=0,
                                  gesamtflaeche=0, abflussart=0, befestigte_flaeche=0, unbefestigte_flaeche=0, 
                                  individualkonzept=0, hydraulischerradius=0,
@@ -730,7 +748,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                                  lastmodified=createdat, materialart=28,
                                  ereignisbilanzierung=0, ereignisgrenzwertende=0,
                                  ereignisgrenzwertanfang=0, ereignistrenndauer=0,
-                                 ereignisindividuell=0, id=nextid)
+                                 ereignisindividuell=0, id=nextid, attrsnew = attrsnew, valuesnew = valuesnew)
 
                     if not dbHE.sql(sql, u'dbHE: export_haltungen (2)'):
                         del dbQK
@@ -1672,11 +1690,13 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
         fortschritt(u'Export Einzeleinleiter (direkt)...', 0.92)
 
         # Varianten abhängig von HE-Version
-        if versionolder(heDBVersion[0:2], [7, 9], 2):
+        if versionolder(heDBVersion[0:2], ['7', '9'], 2):
+            logger.debug(u'Version vor 7.9 erkannt')
             fieldsnew = ''
             attrsnew = ''
             valuesnew = ''
         else:
+            logger.debug(u'Version 7.9 erkannt')
             fieldsnew = ', ZUFLUSSOBERERSCHACHT = 0'
             attrsnew =  ', ZUFLUSSOBERERSCHACHT'
             valuesnew = ', 0'
