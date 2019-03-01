@@ -3,14 +3,14 @@
 import logging
 
 import matplotlib.dates as mdates
-from PyQt4.QtGui import *
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas, \
+    NavigationToolbar2QT as NavigationToolbar
+from qgis.PyQt.QtWidgets import QWidget
 
-from Enums import LayerType
-from ganglinie_dialog import GanglinieDialog
 from qkan.database.fbfunc import FBConnection
+from .Enums import LayerType
+from .ganglinie_dialog import GanglinieDialog
 
 main_logger = logging.getLogger("QKan")
 main_logger.info("Ganglinien-Modul gestartet")
@@ -218,7 +218,7 @@ class Ganglinie:
         qw = QWidget()
         canv = FigureCanvas(self.__fig)
         toolbar = NavigationToolbar(canv, qw, True)
-        for i in reversed(range(self.__dialog.verticalLayout_2.count())):
+        for i in reversed(list(range(self.__dialog.verticalLayout_2.count()))):
             self.__dialog.verticalLayout_2.itemAt(i).widget().setParent(None)
         self.__log.info(u"Toolbars wurden entfernt")
         self.__toolbar_widget = toolbar

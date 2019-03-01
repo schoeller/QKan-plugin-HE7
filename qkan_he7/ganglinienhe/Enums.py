@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 
 
-class SliderMode(object):
+class SliderMode:
     Forward = 1
     Pause = 0
     Backward = -1
 
 
-class Type(object):
+class Type:
     Error = 0
     Selection = 1
 
 
-class LayerType(object):
+class LayerType:
     Schacht = 0
     Haltung = 1
     Wehr = 2

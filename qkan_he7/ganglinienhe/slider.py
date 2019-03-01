@@ -2,10 +2,11 @@
 
 import logging
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from qgis.PyQt.QtCore import QPoint, Qt
+from qgis.PyQt.QtGui import QPainter, QFont, QFontMetrics
+from qgis.PyQt.QtWidgets import QSlider, QStyleOptionSlider, QStyle
 
-from Enums import SliderMode
+from .Enums import SliderMode
 
 main_logger = logging.getLogger("QKan")
 
@@ -51,7 +52,7 @@ class Slider(QSlider):
         font = QFont()
         metrics = QFontMetrics(font)
         l = metrics.width("0x")
-        slider_pos = st.sliderPositionFromValue(self.minimum(), self.maximum(), v, available) + length - (l / 3.)
+        slider_pos = int(st.sliderPositionFromValue(self.minimum(), self.maximum(), v, available) + length - (l / 3.))
         pos = QPoint(slider_pos, self.rect().bottom())
         p.drawText(pos, "0x")
         v = self.maximum()

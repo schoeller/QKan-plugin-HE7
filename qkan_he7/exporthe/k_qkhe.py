@@ -20,25 +20,19 @@
 """
 
 import logging
-import math
 import os
 import shutil
 import time
 
-from qgis.PyQt.QtGui import QProgressBar
-
-from qgis.core import QgsMessageLog
-from qgis.gui import QgsMessageBar
-from qgis.utils import iface
+from qgis.PyQt.QtWidgets import QProgressBar
 
 from qkan.database.dbfunc import DBConnection
 from qkan.database.fbfunc import FBConnection
+from qkan.database.qkan_database import versionolder
 from qkan.database.qkan_utils import fortschritt, fehlermeldung, meldung, checknames
-from qkan.linkflaechen.updatelinks import updatelinkfl, updatelinksw, updatelinkageb
-
 # Referenzlisten
 from qkan.database.reflists import abflusstypen
-from qkan.database.qkan_database import versionolder
+from qkan.linkflaechen.updatelinks import updatelinkfl, updatelinksw, updatelinkageb
 
 logger = logging.getLogger('QKan')
 
@@ -47,8 +41,8 @@ progress_bar = None
 
 # Hauptprogramm ---------------------------------------------------------------------------------------------
 
-def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete, autokorrektur, 
-                     fangradius=0.1, mindestflaeche=0.5, mit_verschneidung=True, datenbanktyp=u'spatialite', 
+def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete, autokorrektur,
+                     fangradius=0.1, mindestflaeche=0.5, mit_verschneidung=True, datenbanktyp=u'spatialite',
                      check_export={}):
     '''Export der Kanaldaten aus einer QKan-SpatiaLite-Datenbank und Schreiben in eine HE-Firebird-Datenbank.
 
@@ -94,7 +88,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
     progress_bar.setRange(0, 100)
     status_message = iface.messageBar().createMessage(u"", u"Export in Arbeit. Bitte warten.")
     status_message.layout().addWidget(progress_bar)
-    iface.messageBar().pushWidget(status_message, QgsMessageBar.INFO, 10)
+    iface.messageBar().pushWidget(status_message, Qgis.Info, 10)
 
     # Referenzliste der Abflusstypen für HYSTEM-EXTRAN
     he_fltyp_ref = abflusstypen('he')
@@ -104,14 +98,16 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
         try:
             os.remove(database_HE)
         except BaseException as err:
-            fehlermeldung(u'Fehler (33) in QKan_Export', 
-                u'Die HE-Datenbank ist schon vorhanden und kann nicht ersetzt werden: {}'.format(repr(err)))
+            fehlermeldung(u'Fehler (33) in QKan_Export',
+                          u'Die HE-Datenbank ist schon vorhanden und kann nicht ersetzt werden: {}'.format(repr(err)))
             return False
     try:
         shutil.copyfile(dbtemplate_HE, database_HE)
     except BaseException as err:
-        fehlermeldung(u'Fehler (34) in QKan_Export', 
-            u'Kopieren der Vorlage HE-Datenbank fehlgeschlagen: {}\nVorlage: {}\nZiel: {}\n'.format(repr(err), dbtemplate_HE, database_HE))
+        fehlermeldung(u'Fehler (34) in QKan_Export',
+                      u'Kopieren der Vorlage HE-Datenbank fehlgeschlagen: {}\nVorlage: {}\nZiel: {}\n'.format(repr(err),
+                                                                                                              dbtemplate_HE,
+                                                                                                              database_HE))
         return False
     fortschritt(u"Firebird-Datenbank aus Vorlage kopiert...", 0.01)
     progress_bar.setValue(1)
@@ -129,23 +125,22 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
     # Zur Abschaetzung der voraussichtlichen Laufzeit
 
     # if not dbQK.sql(u"SELECT count(*) AS n FROM schaechte", u"k_qkhe.laufzeit (1)")
-        # del dbHE
-        # return False
+    # del dbHE
+    # return False
     # anzdata = float(dbQK.fetchone()[0])
     # fortschritt(u"Anzahl Schächte: {}".format(anzdata))
 
     # if not dbQK.sql(u"SELECT count(*) AS n FROM haltungen", u"k_qkhe.laufzeit (2)")
-        # del dbHE
-        # return False
+    # del dbHE
+    # return False
     # anzdata += float(dbQK.fetchone()[0])
     # fortschritt(u"Anzahl Haltungen: {}".format(anzdata))
 
     # if not dbQK.sql(u"SELECT count(*) AS n FROM flaechen", u"k_qkhe.laufzeit (3)")
-        # del dbHE
-        # return False
+    # del dbHE
+    # return False
     # anzdata += float(dbQK.fetchone()[0]) * 2
     # fortschritt(u"Anzahl Flächen: {}".format(anzdata))
-
 
     # --------------------------------------------------------------------------------------------
     # Besonderes Gimmick des ITWH-Programmiers: Die IDs der Tabellen muessen sequentiell
@@ -1125,8 +1120,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
             return False
 
         if not updatelinkfl(dbQK, fangradius):
-            del dbHE            # Im Fehlerfall wird dbQK in updatelinkfl geschlossen. 
-            fehlermeldung(u'Fehler beim Update der Flächen-Verknüpfungen', 
+            del dbHE            # Im Fehlerfall wird dbQK in updatelinkfl geschlossen.
+            fehlermeldung(u'Fehler beim Update der Flächen-Verknüpfungen',
                           u'Der logische Cache konnte nicht aktualisiert werden.')
 
         # Zu verschneidende zusammen mit nicht zu verschneidene Flächen exportieren
@@ -1463,7 +1458,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                     dbQK.commit()
                     iface.messageBar().pushMessage(u"Tabelle 'einzugsgebiete':\n",
                                                    u"Es wurden {} Einzugsgebiete hinzugefügt".format(len(tgb)),
-                                                   level=QgsMessageBar.INFO, duration=3)
+                                                   level=Qgis.Info, duration=3)
 
                 # Kontrolle mit Warnung
                 sql = u"""
@@ -1481,7 +1476,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                 if anz > 0:
                     iface.messageBar().pushMessage(u"Fehlerhafte Daten in Tabelle 'einleit':",
                                                    u"{} Einleitpunkte sind keinem Einzugsgebiet zugeordnet".format(anz),
-                                                   level=QgsMessageBar.WARNING, duration=0)
+                                                   level=Qgis.Warning, duration=0)
         else:
             # 2 Einzugsgebiete in QKan ----------------------------------------------------
             sql = u"""
@@ -1507,8 +1502,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
 
                     dbQK.commit()
                     iface.messageBar().pushMessage(u"Tabelle 'einleit':\n",
-                                       u"Alle Einleitpunkte in der Tabelle 'einleit' wurden einem Einzugsgebiet zugeordnet",
-                                       level=QgsMessageBar.INFO, duration=3)
+                                                   u"Alle Einleitpunkte in der Tabelle 'einleit' wurden einem Einzugsgebiet zugeordnet",
+                                                   level=Qgis.Info, duration=3)
                 else:
                     # 2.1.2 Es existieren mehrere Einzugsgebiete ------------------------------------------
                     sql = u"""UPDATE einleit SET einzugsgebiet = (SELECT tgnam FROM einzugsgebiete
@@ -1521,8 +1516,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
 
                     dbQK.commit()
                     iface.messageBar().pushMessage(u"Tabelle 'einleit':\n",
-                                       u"Alle Einleitpunkte in der Tabelle 'einleit' wurden dem Einzugsgebiet zugeordnet, in dem sie liegen.",
-                                       level=QgsMessageBar.INFO, duration=3)
+                                                   u"Alle Einleitpunkte in der Tabelle 'einleit' wurden dem Einzugsgebiet zugeordnet, in dem sie liegen.",
+                                                   level=Qgis.Info, duration=3)
 
                     # Kontrolle mit Warnung
                     sql = u"""
@@ -1538,8 +1533,9 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                     anz = int(dbQK.fetchone()[0])
                     if anz > 0:
                         iface.messageBar().pushMessage(u"Fehlerhafte Daten in Tabelle 'einleit':",
-                                                       u"{} Einleitpunkte sind keinem Einzugsgebiet zugeordnet".format(anz),
-                                                       level=QgsMessageBar.WARNING, duration=0)
+                                                       u"{} Einleitpunkte sind keinem Einzugsgebiet zugeordnet".format(
+                                                           anz),
+                                                       level=Qgis.Warning, duration=0)
             else:
                 # 2.2 Es gibt Einleitpunkte mit zugeordnetem Einzugsgebiet
                 # Kontrolle mit Warnung
@@ -1558,7 +1554,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                 if anz > 0:
                     iface.messageBar().pushMessage(u"Fehlerhafte Daten in Tabelle 'einleit':",
                                                    u"{} Einleitpunkte sind keinem Einzugsgebiet zugeordnet".format(anz),
-                                                   level=QgsMessageBar.WARNING, duration=0)
+                                                   level=Qgis.Warning, duration=0)
 
         # --------------------------------------------------------------------------------------------
         # Export der Einzeleinleiter aus Schmutzwasser
@@ -1595,8 +1591,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
             return False
 
         if not updatelinksw(dbQK, fangradius):
-            del dbHE            # Im Fehlerfall wird dbQK in updatelinksw geschlossen. 
-            fehlermeldung(u'Fehler beim Update der Einzeleinleiter-Verknüpfungen', 
+            del dbHE  # Im Fehlerfall wird dbQK in updatelinksw geschlossen.
+            fehlermeldung(u'Fehler beim Update der Einzeleinleiter-Verknüpfungen',
                           u'Der logische Cache konnte nicht aktualisiert werden.')
 
         # Nur Daten fuer ausgewaehlte Teilgebiete
@@ -1734,13 +1730,13 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                     ABRECHNUNGSZEITRAUM={abrechnungszeitraum}, ABZUG={abzug},
                     LASTMODIFIED='{createdat}'{fieldsnew}
                     WHERE NAME='{elnam}';
-                    """.format(xel = xel, yel = yel, zuordnunggesperrt = 0, zuordnunabhezg = 1,  haltnam = haltnam,
-                             abwasserart = 0, einwohner = einwohner, wverbrauch = wverbrauch, herkunft = herkunft,
-                             stdmittel = stdmittel, fremdwas = fremdwas, faktor = 1, flaeche = 0, 
-                             zuflussmodell = 0, zuflussdirekt = zuflussdirekt, zufluss = 0, planungsstatus = 0, elnam = elnam[:27],
-                             abrechnungszeitraum = 365, abzug = 0,
-                             createdat = createdat, fieldsnew = fieldsnew)
-
+                    """.format(xel=xel, yel=yel, zuordnunggesperrt=0, zuordnunabhezg=1, haltnam=haltnam,
+                               abwasserart=0, einwohner=einwohner, wverbrauch=wverbrauch, herkunft=herkunft,
+                               stdmittel=stdmittel, fremdwas=fremdwas, faktor=1, flaeche=0,
+                               zuflussmodell=0, zuflussdirekt=zuflussdirekt, zufluss=0, planungsstatus=0,
+                               elnam=elnam[:27],
+                               abrechnungszeitraum=365, abzug=0,
+                               createdat=createdat, fieldsnew=fieldsnew)
 
                 if not dbHE.sql(sql, u'dbHE: export_einleitdirekt (1)'):
                     del dbQK
@@ -1765,12 +1761,12 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                     '{createdat}', {nextid}{valuesnew}
                   FROM RDB$DATABASE
                   WHERE '{elnam}' NOT IN (SELECT NAME FROM EINZELEINLEITER);
-              """.format(xel = xel, yel = yel, zuordnunggesperrt = 0, zuordnunabhezg = 1,  haltnam = haltnam,
-                         abwasserart = 0, einwohner = einwohner, wverbrauch = wverbrauch, herkunft = herkunft,
-                         stdmittel = stdmittel, fremdwas = fremdwas, faktor = 1, flaeche = 0, 
-                         zuflussmodell = 0, zuflussdirekt = zuflussdirekt, zufluss = 0, planungsstatus = 0, elnam = elnam[:27],
-                         abrechnungszeitraum = 365, abzug = 0,
-                         createdat = createdat, nextid = nextid, attrsnew = attrsnew, valuesnew = valuesnew)
+              """.format(xel=xel, yel=yel, zuordnunggesperrt=0, zuordnunabhezg=1, haltnam=haltnam,
+                         abwasserart=0, einwohner=einwohner, wverbrauch=wverbrauch, herkunft=herkunft,
+                         stdmittel=stdmittel, fremdwas=fremdwas, faktor=1, flaeche=0,
+                         zuflussmodell=0, zuflussdirekt=zuflussdirekt, zufluss=0, planungsstatus=0, elnam=elnam[:27],
+                         abrechnungszeitraum=365, abzug=0,
+                         createdat=createdat, nextid=nextid, attrsnew=attrsnew, valuesnew=valuesnew)
 
                 if not dbHE.sql(sql, u'dbHE: export_einleitdirekt (2)'):
                     del dbQK
@@ -1783,8 +1779,6 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
 
         fortschritt(u'{} Einzeleinleiter (direkt) eingefuegt'.format(nextid - nr0), 0.95)
 
-
-
     # ------------------------------------------------------------------------------------------------
     # Export der Aussengebiete
 
@@ -1794,8 +1788,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
         # Tabelle "aussengebiete" eingetragen.
 
         if not updatelinkageb(dbQK, fangradius):
-            del dbHE            # Im Fehlerfall wird dbQK in updatelinkageb geschlossen. 
-            fehlermeldung(u'Fehler beim Update der Außengebiete-Verknüpfungen', 
+            del dbHE  # Im Fehlerfall wird dbQK in updatelinkageb geschlossen.
+            fehlermeldung(u'Fehler beim Update der Außengebiete-Verknüpfungen',
                           u'Der logische Cache konnte nicht aktualisiert werden.')
 
         # Nur Daten fuer ausgewaehlte Teilgebiete
@@ -1861,11 +1855,11 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                     LASTMODIFIED='{createdat}', KOMMENTAR='{kommentar}'
                     WHERE NAME='{gebnam}';
                     """.format(
-                    gebnam = gebnam, schnam = schnam, hoeheob = hoeheob, 
-                    hoeheun = hoeheun, xel = xel, yel = yel, 
-                    gesflaeche = gesflaeche, cn = cn, basisabfluss = basisabfluss, 
-                    fliessweg = fliessweg, verfahren = 0, regenschreiber = regenschreiber, 
-                    createdat = createdat, kommentar = kommentar)
+                    gebnam=gebnam, schnam=schnam, hoeheob=hoeheob,
+                    hoeheun=hoeheun, xel=xel, yel=yel,
+                    gesflaeche=gesflaeche, cn=cn, basisabfluss=basisabfluss,
+                    fliessweg=fliessweg, verfahren=0, regenschreiber=regenschreiber,
+                    createdat=createdat, kommentar=kommentar)
 
                 if not dbHE.sql(sql, u'dbHE: export_aussengebiete (1)'):
                     del dbQK
@@ -1899,11 +1893,11 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                     FROM RDB$DATABASE
                     WHERE '{gebnam}' NOT IN (SELECT NAME FROM AUSSENGEBIET);
                     """.format(
-                    gebnam = gebnam, schnam = schnam, hoeheob = hoeheob, 
-                    hoeheun = hoeheun, xel = xel, yel = yel, 
-                    gesflaeche = gesflaeche, cn = cn, basisabfluss = basisabfluss, 
-                    fliessweg = fliessweg, verfahren = 0, regenschreiber = regenschreiber, 
-                    createdat = createdat, kommentar = kommentar, nextid = nextid)
+                    gebnam=gebnam, schnam=schnam, hoeheob=hoeheob,
+                    hoeheun=hoeheun, xel=xel, yel=yel,
+                    gesflaeche=gesflaeche, cn=cn, basisabfluss=basisabfluss,
+                    fliessweg=fliessweg, verfahren=0, regenschreiber=regenschreiber,
+                    createdat=createdat, kommentar=kommentar, nextid=nextid)
 
                 if not dbHE.sql(sql, u'dbHE: export_aussengebiete (2)'):
                     del dbQK
@@ -1928,24 +1922,22 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
 
         fortschritt(u'{} Aussengebiete eingefuegt'.format(nextid - nr0), 0.98)
 
-
-
     if False:
-        
-    # --------------------------------------------------------------------------------------------------
-    # Setzen der internen Referenzen
 
-    # --------------------------------------------------------------------------------------------------
-    # 1. Schaechte: Anzahl Kanten
+        # --------------------------------------------------------------------------------------------------
+        # Setzen der internen Referenzen
 
-    # sql = u"""
-    # select SCHACHT.ID, SCHACHT.NAME as schnam, count(*) as anz
-    # from SCHACHT join ROHR
-    # on (SCHACHT.NAME = ROHR.SCHACHTOBEN or SCHACHT.NAME = ROHR.SCHACHTUNTEN) group by SCHACHT.ID, SCHACHT.NAME
-    # """
+        # --------------------------------------------------------------------------------------------------
+        # 1. Schaechte: Anzahl Kanten
 
-    # --------------------------------------------------------------------------------------------------
-    # 2. Haltungen (="ROHR"): Referenz zu Schaechten (="SCHACHT")
+        # sql = u"""
+        # select SCHACHT.ID, SCHACHT.NAME as schnam, count(*) as anz
+        # from SCHACHT join ROHR
+        # on (SCHACHT.NAME = ROHR.SCHACHTOBEN or SCHACHT.NAME = ROHR.SCHACHTUNTEN) group by SCHACHT.ID, SCHACHT.NAME
+        # """
+
+        # --------------------------------------------------------------------------------------------------
+        # 2. Haltungen (="ROHR"): Referenz zu Schaechten (="SCHACHT")
 
         sql = u"""
           UPDATE ROHR
@@ -1999,7 +1991,6 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
 
         dbHE.sql(u"UPDATE ITWH$PROGINFO SET NEXTID = {:d}".format(nextid))
         dbHE.commit()
-
 
     # --------------------------------------------------------------------------------------------
     # Export der Aussengebiete
@@ -2112,7 +2103,6 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
         dbHE.sql(u"UPDATE ITWH$PROGINFO SET NEXTID = {:d}".format(nextid))
         dbHE.commit()
 
-
     # Zum Schluss: Schließen der Datenbankverbindungen
 
     del dbQK
@@ -2121,5 +2111,4 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
     fortschritt(u'Ende...', 1)
     progress_bar.setValue(100)
     status_message.setText(u"Datenexport abgeschlossen.")
-    status_message.setLevel(QgsMessageBar.SUCCESS)
-
+    status_message.setLevel(Qgis.Success)

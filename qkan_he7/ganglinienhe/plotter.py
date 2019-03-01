@@ -7,14 +7,14 @@ import matplotlib.animation as animation
 import matplotlib.lines as lines
 import matplotlib.text as mtext
 import matplotlib.transforms as mtransforms
-from PyQt4.QtGui import QWidget
 from matplotlib import pyplot as plt
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt4agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas, \
+    NavigationToolbar2QT as NavigationToolbar
 from matplotlib.lines import Line2D
+from qgis.PyQt.QtWidgets import QWidget
 
-from Enums import SliderMode, LayerType
 from qkan.database.fbfunc import FBConnection
+from .Enums import SliderMode, LayerType
 
 main_logger = logging.getLogger("QKan")
 main_logger.info("Plotter-Modul gestartet")
@@ -423,7 +423,7 @@ class Animator:
                     schaechte[zeitpunkt] = {}
                 schaechte[zeitpunkt][schacht] = wasserstand
         self.__log.info(u"Wasserstände und Zeitpunkte der Schächte wurden abgefragt")
-        return len(schaechte.keys()) - 1, dict(haltungen=haltungen, schaechte=schaechte), sorted(schaechte.keys())
+        return len(list(schaechte.keys())) - 1, dict(haltungen=haltungen, schaechte=schaechte), sorted(schaechte.keys())
 
     def draw(self, timestamp):
         """

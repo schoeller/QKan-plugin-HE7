@@ -24,19 +24,18 @@ import copy
 import logging
 import os.path
 
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QMessageBox, QFileDialog, QGridLayout, QLabel
 
-import plotter
-# noinspection PyUnresolvedReferences
-import resources
-import slider as s
-from Enums import SliderMode, Type, LayerType
-from application_dialog import LaengsschnittDialog
-from ganglinie import Ganglinie
-from qkan_he7 import Dummy
 from qkan.database.fbfunc import FBConnection
 from qkan.database.navigation import Navigator
+from qkan_he7 import Dummy
+# noinspection PyUnresolvedReferences
+from . import plotter, resources, slider as s
+from .Enums import SliderMode, Type, LayerType
+from .application_dialog import LaengsschnittDialog
+from .ganglinie import Ganglinie
 
 # Initialize Qt resources from file resources.py
 
@@ -277,8 +276,8 @@ class Application:
             self.__animator.pause()
         except AttributeError:
             pass
-        filename = QFileDialog.getOpenFileName(self.__dlg, u"Wählen Sie eine Ergebnis-Datenbank",
-                                               filter="IDBF (*.idbf);; Alle Dateien (*.*)")
+        filename, __ = QFileDialog.getOpenFileName(self.__dlg, u"Wählen Sie eine Ergebnis-Datenbank",
+                                                   filter="IDBF (*.idbf);; Alle Dateien (*.*)")
         if filename != "":
             self.__result_db = filename
             self.__dlg.label_dbname.setText(filename)
@@ -329,7 +328,8 @@ class Application:
         schaechte = route.get("schaechte", [])
         db = FBConnection(self.__result_db)
         if db is None:
-            main_logger.ERROR(u'QKan.Ganglinie.__check_resultDB:\nDatenbank konnte nicht geöffnet werden:\n{}'.format(self.__result_db))
+            main_logger.ERROR(u'QKan.Ganglinie.__check_resultDB:\nDatenbank konnte nicht geöffnet werden:\n{}'.format(
+                self.__result_db))
         statement = u'SELECT kante FROM lau_max_el WHERE "KANTE"={}'
         for haltung in haltungen:
             db.sql(statement.format(u"'{}'".format(haltung)))
@@ -481,7 +481,7 @@ class Application:
         laengsschnitt = plotter.Laengsschnitt(copy.deepcopy(route))
         plotter.set_ax_labels("m", "m")
         widget, _toolbar = laengsschnitt.get_widget()
-        for i in reversed(range(self.__dlg.verticalLayout.count())):
+        for i in reversed(list(range(self.__dlg.verticalLayout.count()))):
             self.__dlg.verticalLayout.itemAt(i).widget().setParent(None)
         self.__dlg.verticalLayout.addWidget(_toolbar)
         self.__dlg.stackedWidget.insertWidget(0, widget)

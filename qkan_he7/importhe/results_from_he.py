@@ -1,47 +1,40 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
 
   Results from HE
   ==============
-  
+
   Aus einer Hystem-Extran-Datenbank im Firebird-Format werden Ergebnisdaten
   in die QKan-Datenbank importiert und ausgewertet.
-  
+
   | Dateiname            : results_from_he.py
   | Date                 : September 2016
   | Copyright            : (C) 2016 by Joerg Hoettges
   | Email                : hoettges@fh-aachen.de
   | git sha              : $Format:%H$
-  
-  This program is free software; you can redistribute it and/or modify   
-  it under the terms of the GNU General Public License as published by   
-  the Free Software Foundation; either version 2 of the License, or      
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
 
-'''
+"""
 
 __author__ = 'Joerg Hoettges'
 __date__ = 'September 2016'
 __copyright__ = '(C) 2016, Joerg Hoettges'
 
-# This will get replaced with a git SHA1 when you do a git archive
 
-__revision__ = ':%H$'
-
-# import tempfile
 import logging
 import os
 
-from PyQt4.QtCore import QFileInfo
-from qgis.core import QgsMessageLog, QgsProject, QgsCoordinateReferenceSystem, QgsDataSourceURI, QgsVectorLayer, QgsMapLayerRegistry
-from qgis.gui import QgsMessageBar
+from qgis.core import QgsVectorLayer, QgsDataSourceUri, QgsProject
 from qgis.utils import iface, pluginDirectory
 
 from qkan.database.dbfunc import DBConnection
 from qkan.database.fbfunc import FBConnection
-
-from qkan.database.qkan_utils import fortschritt, fehlermeldung
+from qkan.database.qkan_utils import fehlermeldung
 
 logger = logging.getLogger(u'QKan')
 
@@ -50,7 +43,7 @@ logger = logging.getLogger(u'QKan')
 # Hauptprogramm
 
 def importResults(database_HE, database_QKan, qml_choice, qmlfileResults, epsg=25832, dbtyp=u'SpatiaLite'):
-    '''Importiert Simulationsergebnisse aus einer HE-Firebird-Datenbank und schreibt diese in Tabellen 
+    """Importiert Simulationsergebnisse aus einer HE-Firebird-Datenbank und schreibt diese in Tabellen
        der QKan-SpatiaLite-Datenbank.
 
     :database_HE:   Datenbankobjekt, das die Verknüpfung zur HE-Firebird-Datenbank verwaltet
@@ -61,9 +54,9 @@ def importResults(database_HE, database_QKan, qml_choice, qmlfileResults, epsg=2
 
     :dbtyp:         Typ der Datenbank (SpatiaLite, PostGIS)
     :type dbtyp:    String
-    
+
     :returns: void
-    '''
+    """
 
     # ------------------------------------------------------------------------------
     # Datenbankverbindungen
@@ -94,18 +87,18 @@ def importResults(database_HE, database_QKan, qml_choice, qmlfileResults, epsg=2
             maxuebstauvol REAL,
             kommentar TEXT,
             createdat TEXT DEFAULT CURRENT_DATE)''',
-        u"""SELECT AddGeometryColumn('ResultsSch','geom',{},'POINT',2)""".format(epsg), 
+        u"""SELECT AddGeometryColumn('ResultsSch','geom',{},'POINT',2)""".format(epsg),
         u'''DELETE FROM ResultsSch''']
-        # , u'''CREATE TABLE IF NOT EXISTS ResultsHal(
-            # pk INTEGER PRIMARY KEY AUTOINCREMENT,
-            # haltnam TEXT,
-            # uebstauhaeuf REAL,
-            # uebstauanz REAL, 
-            # maxuebstauvol REAL,
-            # kommentar TEXT,
-            # createdat TEXT DEFAULT CURRENT_DATE)''',
-        # u"""SELECT AddGeometryColumn('ResultsHal','geom',{},'LINESTRING',2)""".format(epsg)
-        # u'''DELETE FROM ResultsHal''']
+    # , u'''CREATE TABLE IF NOT EXISTS ResultsHal(
+    # pk INTEGER PRIMARY KEY AUTOINCREMENT,
+    # haltnam TEXT,
+    # uebstauhaeuf REAL,
+    # uebstauanz REAL,
+    # maxuebstauvol REAL,
+    # kommentar TEXT,
+    # createdat TEXT DEFAULT CURRENT_DATE)''',
+    # u"""SELECT AddGeometryColumn('ResultsHal','geom',{},'LINESTRING',2)""".format(epsg)
+    # u'''DELETE FROM ResultsHal''']
 
     for sql in sqllist:
         if not dbQK.sql(sql, u"QKan_Import_Results (1)"):
@@ -129,8 +122,8 @@ def importResults(database_HE, database_QKan, qml_choice, qmlfileResults, epsg=2
         sql = u'''INSERT INTO ResultsSch
                 (schnam, uebstauhaeuf, uebstauanz, maxuebstauvol, kommentar)
                 VALUES ('{schnam}', {uebstauhaeuf}, {uebstauanz}, {maxuebstauvol}, '{kommentar}')'''.format(
-                schnam=schnam, uebstauhaeuf=uebstauhaeuf, uebstauanz=uebstauanz, 
-                maxuebstauvol=maxuebstauvol, kommentar=os.path.basename(database_HE))
+            schnam=schnam, uebstauhaeuf=uebstauhaeuf, uebstauanz=uebstauanz,
+            maxuebstauvol=maxuebstauvol, kommentar=os.path.basename(database_HE))
 
         if not dbQK.sql(sql, u'QKan_Import_Results (5)'):
             return False
@@ -148,11 +141,11 @@ def importResults(database_HE, database_QKan, qml_choice, qmlfileResults, epsg=2
     # Einfügen der Ergebnistabelle in die Layerliste, wenn nicht schon geladen
     layers = iface.legendInterface().layers()
     if u'Ergebnisse_LZ' not in [lay.name() for lay in layers]:
-        uri = QgsDataSourceURI()
+        uri = QgsDataSourceUri()
         uri.setDatabase(database_QKan)
         uri.setDataSource(u'', u'ResultsSch', u'geom')
         vlayer = QgsVectorLayer(uri.uri(), u'Überstau Schächte', u'spatialite')
-        QgsMapLayerRegistry.instance().addMapLayer(vlayer)
+        QgsProject.instance().addMapLayer(vlayer)
 
         # Stilvorlage nach Benutzerwahl laden
         templatepath = os.path.join(pluginDirectory('qkan'), u"templates")
@@ -162,20 +155,20 @@ def importResults(database_HE, database_QKan, qml_choice, qmlfileResults, epsg=2
                 vlayer.loadNamedStyle(template)
             except:
                 fehlermeldung(u"Fehler in QKan_Results_from_HE",
-                          u'Stildatei "Überstauhäufigkeit.qml" wurde nicht gefunden!\nAbbruch!')
+                              u'Stildatei "Überstauhäufigkeit.qml" wurde nicht gefunden!\nAbbruch!')
         elif qml_choice == 'uebvol':
             template = os.path.join(templatepath, u"Überstauvolumen.qml")
             try:
                 vlayer.loadNamedStyle(template)
             except:
                 fehlermeldung(u"Fehler in QKan_Results_from_HE",
-                          u'Stildatei "Überstauvolumen.qml" wurde nicht gefunden!\nAbbruch!')
+                              u'Stildatei "Überstauvolumen.qml" wurde nicht gefunden!\nAbbruch!')
         elif qml_choice == 'userqml':
             try:
                 vlayer.loadNamedStyle(qmlfileResults)
             except:
                 fehlermeldung(u"Fehler in QKan_Results_from_HE",
-                          u'Benutzerdefinierte Stildatei {:s} wurde nicht gefunden!\nAbbruch!'.format(qml_choice))
+                              u'Benutzerdefinierte Stildatei {:s} wurde nicht gefunden!\nAbbruch!'.format(qml_choice))
 
     del dbQK
     del dbHE

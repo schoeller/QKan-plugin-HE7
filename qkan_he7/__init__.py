@@ -3,6 +3,7 @@ import logging
 import os
 import tempfile
 from datetime import datetime as dt
+
 from qgis.utils import unloadPlugin
 
 # Aufsetzen des Logging-Systems
@@ -58,9 +59,9 @@ class Dummy:
         self.main = main
         self.actions = []
 
-        from importhe import application as importhe
-        from exporthe import application as exporthe
-        from ganglinienhe import application as ganglinienhe
+        from .importhe import application as importhe
+        from .exporthe import application as exporthe
+        from .ganglinienhe import application as ganglinienhe
         self.plugins = [
             importhe.ImportFromHE(iface),
             exporthe.ExportToHE(iface),

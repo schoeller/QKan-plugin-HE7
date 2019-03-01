@@ -20,32 +20,29 @@
   (at your option) any later version.                                  
 
 """
-# Ergaenzt (jh, 08.02.2017) -------------------------------------------------
 import json
 import logging
 import os.path
 import site
 
-from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
-from PyQt4.QtGui import QFileDialog, QListWidgetItem
-from qgis.core import QgsProject, QgsMessageLog
-from qgis.gui import QgsMessageBar
+from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
+from qgis.PyQt.QtWidgets import QFileDialog, QListWidgetItem
+from qgis.core import QgsProject
 from qgis.utils import iface, pluginDirectory
 
-# noinspection PyUnresolvedReferences
-import resources
-# Initialize Qt resources from file resources.py
-# Import the code for the dialog
-from application_dialog import ExportToHEDialog
-from k_qkhe import exportKanaldaten
-from qkan_he7 import Dummy
 from qkan.database.dbfunc import DBConnection
-from qkan.database.qkan_utils import get_database_QKan, get_editable_layers, fortschritt, fehlermeldung
+from qkan.database.qkan_utils import get_database_QKan, get_editable_layers, fehlermeldung
+from qkan_he7 import Dummy
+# noinspection PyUnresolvedReferences
+from . import resources
+from .application_dialog import ExportToHEDialog
+from .k_qkhe import exportKanaldaten
 
 # Anbindung an Logging-System (Initialisierung in __init__)
 logger = logging.getLogger('QKan')
 
 progress_bar = None
+
 
 class ExportToHE:
     """QGIS Plugin Implementation."""
@@ -231,13 +228,12 @@ class ExportToHE:
     # Anfang Eigene Funktionen -------------------------------------------------
     # (jh, 08.02.2017)
 
-
     def selectFile_HeDB_dest(self):
         """Datenbankverbindung zur HE-Datenbank (Firebird) auswaehlen und gegebenenfalls die Zieldatenbank
            erstellen, aber noch nicht verbinden."""
 
-        filename = QFileDialog.getSaveFileName(self.dlg, "Dateinamen der Ziel-HE-Datenbank eingeben",
-                                               self.default_dir, "*.idbf")
+        filename, __ = QFileDialog.getSaveFileName(self.dlg, "Dateinamen der Ziel-HE-Datenbank eingeben",
+                                                   self.default_dir, "*.idbf")
         # if os.path.dirname(filename) != '':
         # os.chdir(os.path.dirname(filename))
         self.dlg.tf_heDB_dest.setText(filename)
@@ -245,8 +241,8 @@ class ExportToHE:
     def selectFile_HeDB_template(self):
         """Vorlage-HE-Datenbank (Firebird) auswaehlen."""
 
-        filename = QFileDialog.getOpenFileName(self.dlg, u"Vorlage-HE-Datenbank auswählen",
-                                               self.default_dir, "*.idbf")
+        filename, __ = QFileDialog.getOpenFileName(self.dlg, u"Vorlage-HE-Datenbank auswählen",
+                                                   self.default_dir, "*.idbf")
         # if os.path.dirname(filename) != '':
         # os.chdir(os.path.dirname(filename))
         self.dlg.tf_heDB_template.setText(filename)
@@ -254,8 +250,8 @@ class ExportToHE:
     def selectFile_HeDB_emptytemplate(self):
         """Vorlage-HE-Datenbank (Firebird) auswaehlen."""
 
-        filename = QFileDialog.getOpenFileName(self.dlg, u"Leere Vorlage-HE-Datenbank auswählen",
-                                               self.templatepath, "*.idbf")
+        filename, __ = QFileDialog.getOpenFileName(self.dlg, u"Leere Vorlage-HE-Datenbank auswählen",
+                                                   self.templatepath, "*.idbf")
         # if os.path.dirname(filename) != '':
         # os.chdir(os.path.dirname(filename))
         self.dlg.tf_heDB_template.setText(filename)
@@ -263,8 +259,8 @@ class ExportToHE:
     def selectFile_QKanDB(self):
         """Datenbankverbindung zur QKan-Datenbank (SpatiLite) auswaehlen."""
 
-        filename = QFileDialog.getOpenFileName(self.dlg, u"QKan-Datenbank auswählen",
-                                               self.default_dir, "*.sqlite")
+        filename, __ = QFileDialog.getOpenFileName(self.dlg, u"QKan-Datenbank auswählen",
+                                                   self.default_dir, "*.sqlite")
         # if os.path.dirname(filename) != '':
         # os.chdir(os.path.dirname(filename))
         self.dlg.tf_QKanDB.setText(filename)
@@ -438,7 +434,6 @@ class ExportToHE:
             liste.append(elem.text())
         return liste
 
-
     # Ende Eigene Funktionen ---------------------------------------------------
 
     def run(self):
@@ -449,7 +444,7 @@ class ExportToHE:
         if len({'flaechen', 'haltungen', 'linkfl', 'tezg', 'schaechte'} & get_editable_layers()) > 0:
             iface.messageBar().pushMessage(u"Bedienerfehler: ",
                                            u'Die zu verarbeitenden Layer dürfen nicht im Status "bearbeitbar" sein. Abbruch!',
-                                           level=QgsMessageBar.CRITICAL)
+                                           level=Qgis.Critical)
             return False
 
         # Übernahme der Quelldatenbank:
@@ -472,7 +467,8 @@ class ExportToHE:
         self.dbQK = DBConnection(dbname=database_QKan)  # Datenbankobjekt der QKan-Datenbank zum Lesen
         if not self.dbQK.connected:
             logger.error(u"Fehler in exportdyna.application:\n",
-                          u'QKan-Datenbank {:s} wurde nicht gefunden oder war nicht aktuell!\nAbbruch!'.format(database_QKan))
+                         u'QKan-Datenbank {:s} wurde nicht gefunden oder war nicht aktuell!\nAbbruch!'.format(
+                             database_QKan))
             return None
 
         # Check, ob alle Teilgebiete in Flächen, Schächten und Haltungen auch in Tabelle "teilgebiete" enthalten
@@ -633,5 +629,5 @@ class ExportToHE:
                 # logger.debug(u"Config-Dictionary: {}".format(self.config))
                 fileconfig.write(json.dumps(self.config))
 
-            exportKanaldaten(iface, database_HE, dbtemplate_HE, self.dbQK, liste_teilgebiete, autokorrektur, 
+            exportKanaldaten(iface, database_HE, dbtemplate_HE, self.dbQK, liste_teilgebiete, autokorrektur,
                              fangradius, mindestflaeche, mit_verschneidung, datenbanktyp, check_export)

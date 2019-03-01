@@ -1,52 +1,44 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
 
   Import from HE
   ==============
-  
+
   Aus einer Hystem-Extran-Datenbank im Firebird-Format werden Kanaldaten
   in die QKan-Datenbank importiert. Dazu wird eine Projektdatei erstellt,
   die verschiedene thematische Layer erzeugt, u.a. eine Klassifizierung
   der Schachttypen.
-  
+
   | Dateiname            : import_from_he.py
   | Date                 : September 2016
   | Copyright            : (C) 2016 by Joerg Hoettges
   | Email                : hoettges@fh-aachen.de
   | git sha              : $Format:%H$
-  
-  This program is free software; you can redistribute it and/or modify   
-  it under the terms of the GNU General Public License as published by   
-  the Free Software Foundation; either version 2 of the License, or      
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
   (at your option) any later version.
 
-'''
+"""
 
 __author__ = 'Joerg Hoettges'
 __date__ = 'September 2016'
 __copyright__ = '(C) 2016, Joerg Hoettges'
 
-# This will get replaced with a git SHA1 when you do a git archive
-
-__revision__ = ':%H$'
-
-# import tempfile
-import glob
 import logging
 import os
-import shutil
 import xml.etree.ElementTree as ET
 
-from PyQt4.QtCore import QFileInfo
-from qgis.core import QgsMessageLog, QgsProject, QgsCoordinateReferenceSystem, QgsMapLayerRegistry
+from qgis.PyQt.QtCore import QFileInfo
+from qgis.core import QgsMessageLog, QgsProject, QgsCoordinateReferenceSystem
 from qgis.gui import QgsMessageBar
 from qgis.utils import iface, pluginDirectory
 
 from qkan.database.dbfunc import DBConnection
 from qkan.database.fbfunc import FBConnection
-
-from qkan.database.qkan_utils import fortschritt, fehlermeldung, evalNodeTypes
+from qkan.database.qkan_utils import fehlermeldung, evalNodeTypes
 
 logger = logging.getLogger(u'QKan')
 
@@ -56,7 +48,7 @@ logger = logging.getLogger(u'QKan')
 
 def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
                      dbtyp=u'SpatiaLite'):
-    '''Import der Kanaldaten aus einer HE-Firebird-Datenbank und Schreiben in eine QKan-SpatiaLite-Datenbank.
+    """Import der Kanaldaten aus einer HE-Firebird-Datenbank und Schreiben in eine QKan-SpatiaLite-Datenbank.
 
     :database_HE:   Datenbankobjekt, das die Verknüpfung zur HE-Firebird-Datenbank verwaltet
     :type database: DBConnection (geerbt von firebirdsql...)
@@ -66,9 +58,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
 
     :dbtyp:         Typ der Datenbank (SpatiaLite, PostGIS)
     :type dbtyp:    String
-    
+
     :returns: void
-    '''
+    """
 
     # ------------------------------------------------------------------------------
     # Datenbankverbindungen
@@ -136,7 +128,6 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     for el in daten:
         ref_simulationsstatus[el[0]] = el[1]
 
-
     # ------------------------------------------------------------------------------
     # Haltungsdaten
     # Feld [abflussart] entspricht dem Eingabefeld "System", das in einem Nachschlagefeld die 
@@ -144,9 +135,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
 
     # Tabelle in QKan-Datenbank leeren
     # if check_tabinit:
-        # sql = u'DELETE FROM haltungen'
-        # if not dbQK.sql(sql, u'importkanaldaten_he (6)'):
-            # return None
+    # sql = u'DELETE FROM haltungen'
+    # if not dbQK.sql(sql, u'importkanaldaten_he (6)'):
+    # return None
 
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
@@ -249,8 +240,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
             geom = u'ST_MakeLine(ST_SetSRID(ST_MakePoint({0:},{1:}),{4:s}),ST_SetSRID(ST_MakePoint({2:},{3:}),{4:}))'.format(
                 xob, yob, xun, yun, epsg)
         else:
-            fehlermeldung('Programmfehler!', 
-                'Datenbanktyp ist fehlerhaft {0:s}, Endung: {1:s}!\nAbbruch!'.format(dbtyp,dbdatabase[-7:].lower()))
+            fehlermeldung('Programmfehler!',
+                          'Datenbanktyp ist fehlerhaft {0:s}, Endung: {1:s}!\nAbbruch!'.format(dbtyp,
+                                                                                               dbdatabase[-7:].lower()))
 
         # Datensatz aufbereiten in die QKan-DB schreiben
 
@@ -285,12 +277,11 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # Das Feld [ART] enthält die Information, ob es sich um einen Startknoten oder einen Inneren Knoten handelt.
     # oder: um was für eine #Verzweigung es sich handelt (Wunsch von Herrn Wippermann)...???
 
-
     # Tabelle in QKan-Datenbank leeren
     # if check_tabinit:
-        # sql = u'DELETE FROM schaechte'
-        # if not dbQK.sql(sql, u'importkanaldaten_he (11)'):
-            # return None
+    # sql = u'DELETE FROM schaechte'
+    # if not dbQK.sql(sql, u'importkanaldaten_he (11)'):
+    # return None
 
     # Daten aus ITWH-Datenbank abfragen
     sql = u'''
@@ -346,13 +337,16 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
 
         if dbtyp == u'SpatiaLite':
             geop = u'MakePoint({0:},{1:},{2:})'.format(xsch, ysch, epsg)
-            geom = u'CastToMultiPolygon(MakePolygon(MakeCircle({0:},{1:},{2:},{3:})))'.format(xsch, ysch, 
-                                             (1. if durchm == 'NULL' else durchm/ 1000.) , epsg)
+            geom = u'CastToMultiPolygon(MakePolygon(MakeCircle({0:},{1:},{2:},{3:})))'.format(xsch, ysch,
+                                                                                              (
+                                                                                                  1. if durchm == 'NULL' else durchm / 1000.),
+                                                                                              epsg)
         elif dbtyp == u'postgis':
             geop = u'ST_SetSRID(ST_MakePoint({0:},{1:}),{2:})'.format(xsch, ysch, epsg)
         else:
-            fehlermeldung('Programmfehler!', 
-                'Datenbanktyp ist fehlerhaft {0:s}, Endung: {1:s}!\nAbbruch!'.format(dbtyp,dbdatabase[-7:].lower()))
+            fehlermeldung('Programmfehler!',
+                          'Datenbanktyp ist fehlerhaft {0:s}, Endung: {1:s}!\nAbbruch!'.format(dbtyp,
+                                                                                               dbdatabase[-7:].lower()))
 
         # Datensatz in die QKan-DB schreiben
 
@@ -377,12 +371,11 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # ------------------------------------------------------------------------------
     # Speicherschachtdaten
 
-
     # Tabelle in QKan-Datenbank leeren
     # if check_tabinit:
-        # sql = u'DELETE FROM speicherschaechte'
-        # if not dbQK.sql(sql, u'importkanaldaten_he (15)'):
-            # return None
+    # sql = u'DELETE FROM speicherschaechte'
+    # if not dbQK.sql(sql, u'importkanaldaten_he (15)'):
+    # return None
 
     # Daten aus ITWH-Datenbank abfragen
     sql = u'''
@@ -425,13 +418,16 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
 
         if dbtyp == u'SpatiaLite':
             geop = u'MakePoint({0:},{1:},{2:})'.format(xsch, ysch, epsg)
-            geom = u'CastToMultiPolygon(MakePolygon(MakeCircle({0:},{1:},{2:},{3:})))'.format(xsch, ysch, 
-                                             (1. if durchm == 'NULL' else durchm/ 1000.) , epsg)
+            geom = u'CastToMultiPolygon(MakePolygon(MakeCircle({0:},{1:},{2:},{3:})))'.format(xsch, ysch,
+                                                                                              (
+                                                                                                  1. if durchm == 'NULL' else durchm / 1000.),
+                                                                                              epsg)
         elif dbtyp == u'postgis':
             geop = u'ST_SetSRID(ST_MakePoint({0:},{1:}),{2:})'.format(xsch, ysch, epsg)
         else:
-            fehlermeldung('Programmfehler!', 
-                'Datenbanktyp ist fehlerhaft {0:s}, Endung: {1:s}!\nAbbruch!'.format(dbtyp,dbdatabase[-7:].lower()))
+            fehlermeldung('Programmfehler!',
+                          'Datenbanktyp ist fehlerhaft {0:s}, Endung: {1:s}!\nAbbruch!'.format(dbtyp,
+                                                                                               dbdatabase[-7:].lower()))
 
         # Datensatz in die QKan-DB schreiben
 
@@ -454,12 +450,11 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # Auslässe
     # Das Feld [TYP] enthält den Auslasstyp (0=Frei, 1=Normal, 2= Konstant, 3=Tide, 4=Zeitreihe)
 
-
     # Tabelle in QKan-Datenbank leeren
     # if check_tabinit:
-        # sql = u'DELETE FROM auslaesse'
-        # if not dbQK.sql(sql, u'importkanaldaten_he (18)'):
-            # return None
+    # sql = u'DELETE FROM auslaesse'
+    # if not dbQK.sql(sql, u'importkanaldaten_he (18)'):
+    # return None
 
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
@@ -517,8 +512,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
         elif dbtyp == u'postgis':
             geop = u'ST_SetSRID(ST_MakePoint({0:},{1:}),{2:})'.format(xsch, ysch, epsg)
         else:
-            fehlermeldung('Programmfehler!', 
-                'Datenbanktyp ist fehlerhaft {0:s}, Endung: {1:s}!\nAbbruch!'.format(dbtyp,dbdatabase[-7:].lower()))
+            fehlermeldung('Programmfehler!',
+                          'Datenbanktyp ist fehlerhaft {0:s}, Endung: {1:s}!\nAbbruch!'.format(dbtyp,
+                                                                                               dbdatabase[-7:].lower()))
 
         # Datensatz in die QKan-DB schreiben
 
@@ -542,9 +538,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
 
     # Tabelle in QKan-Datenbank leeren
     # if check_tabinit:
-        # sql = u'DELETE FROM pumpen'
-        # if not dbQK.sql(sql, u'importkanaldaten_he (22)'):
-            # return None
+    # sql = u'DELETE FROM pumpen'
+    # if not dbQK.sql(sql, u'importkanaldaten_he (22)'):
+    # return None
 
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
@@ -620,8 +616,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
             geom = u'''ST_MakeLine(ST_SetSRID(ST_MakePoint({0:},{1:}),{4:}),
                       ST_SetSRID(ST_MakePoint({2:},{3:}),{4:}))'''.format(xob, yob, xun, yun, epsg)
         else:
-            fehlermeldung('Programmfehler!', 
-                'Datenbanktyp ist fehlerhaft {0:s}, Endung: {1:s}!\nAbbruch!'.format(dbtyp,dbdatabase[-7:].lower()))
+            fehlermeldung('Programmfehler!',
+                          'Datenbanktyp ist fehlerhaft {0:s}, Endung: {1:s}!\nAbbruch!'.format(dbtyp,
+                                                                                               dbdatabase[-7:].lower()))
 
         # Datensatz aufbereiten und in die QKan-DB schreiben
 
@@ -652,9 +649,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
 
     # Tabelle in QKan-Datenbank leeren
     # if check_tabinit:
-        # sql = u'DELETE FROM wehre'
-        # if not dbQK.sql(sql, u'importkanaldaten_he (26)'):
-            # return None
+    # sql = u'DELETE FROM wehre'
+    # if not dbQK.sql(sql, u'importkanaldaten_he (26)'):
+    # return None
 
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
@@ -719,8 +716,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
             geom = u'ST_MakeLine(ST_SetSRID(ST_MakePoint({0:},{1:}),{4:}),ST_SetSRID(ST_MakePoint({2:},{3:}),{4:}))'.format(
                 xob, yob, xun, yun, epsg)
         else:
-            fehlermeldung('Programmfehler!', 
-                'Datenbanktyp ist fehlerhaft {0:s}, Endung: {1:s}!\nAbbruch!'.format(dbtyp,dbdatabase[-7:].lower()))
+            fehlermeldung('Programmfehler!',
+                          'Datenbanktyp ist fehlerhaft {0:s}, Endung: {1:s}!\nAbbruch!'.format(dbtyp,
+                                                                                               dbdatabase[-7:].lower()))
 
         # Datensatz aufbereiten und in die QKan-DB schreiben
 
@@ -798,7 +796,7 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
             fehlermeldung(u'SQL-Fehler', repr(err))
             fehlermeldung(u"Fehler in QKan_Import_from_HE", u"\nFehler in sql INSERT INTO einzugsgebiete: \n" + \
                           repr((tgnam, ewdichte, wverbrauch, stdmittel,
-                               fremdwas, kommentar, createdat)) + u'\n\n')
+                                fremdwas, kommentar, createdat)) + u'\n\n')
             ok = False
 
         if ok:
@@ -811,9 +809,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
 
     # Tabelle in QKan-Datenbank leeren
     # if check_tabinit:
-        # sql = u'DELETE FROM speicherkennlinien'
-        # if not dbQK.sql(sql, u'importkanaldaten_he (31)'):
-            # return None
+    # sql = u'DELETE FROM speicherkennlinien'
+    # if not dbQK.sql(sql, u'importkanaldaten_he (31)'):
+    # return None
 
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
@@ -851,9 +849,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
 
     # Tabelle in QKan-Datenbank leeren
     # if check_tabinit:
-        # sql = u'DELETE FROM profildaten'
-        # if not dbQK.sql(sql, u'importkanaldaten_he (33)'):
-            # return None
+    # sql = u'DELETE FROM profildaten'
+    # if not dbQK.sql(sql, u'importkanaldaten_he (33)'):
+    # return None
 
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
@@ -891,9 +889,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
 
     # Tabelle in QKan-Datenbank leeren
     # if check_tabinit:
-        # sql = u'DELETE FROM abflussparameter'
-        # if not dbQK.sql(sql, u'importkanaldaten_he (35)'):
-            # return None
+    # sql = u'DELETE FROM abflussparameter'
+    # if not dbQK.sql(sql, u'importkanaldaten_he (35)'):
+    # return None
 
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
@@ -964,10 +962,8 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
             return None
     dbQK.commit()
 
-
     # Schachttypen auswerten
-    evalNodeTypes(dbQK)                     # in qkan.database.qkan_utils
-
+    evalNodeTypes(dbQK)  # in qkan.database.qkan_utils
 
     # --------------------------------------------------------------------------
     # Zoom-Bereich für die Projektdatei vorbereiten
@@ -1036,17 +1032,17 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
 
         # Liste der Geotabellen aus QKan, um andere Tabellen von der Bearbeitung auszuschliessen
         # Liste steht in 3 Modulen: tools.k_tools, importdyna.import_from_dyna, importhe.import_from_he
-        tabliste = [u'einleit', u'einzugsgebiete', u'flaechen', u'haltungen', u'linkfl', u'linksw', 
+        tabliste = [u'einleit', u'einzugsgebiete', u'flaechen', u'haltungen', u'linkfl', u'linksw',
                     u'pumpen', u'schaechte', u'teilgebiete', u'tezg', u'wehre']
 
         # Liste der QKan-Formulare, um individuell erstellte Formulare von der Bearbeitung auszuschliessen
-        formsliste = ['qkan_abflussparameter.ui', 'qkan_anbindungageb.ui', 'qkan_anbindungeinleit.ui', 
-                      'qkan_anbindungflaechen.ui', 'qkan_auslaesse.ui', 'qkan_auslasstypen.ui', 
-                      'qkan_aussengebiete.ui', 'qkan_bodenklassen.ui', 'qkan_einleit.ui', 
-                      'qkan_einzugsgebiete.ui', 'qkan_entwaesserungsarten.ui', 'qkan_flaechen.ui', 
-                      'qkan_haltungen.ui', 'qkan_profildaten.ui', 'qkan_profile.ui', 'qkan_pumpen.ui', 
-                      'qkan_pumpentypen.ui', 'qkan_schaechte.ui', 'qkan_simulationsstatus.ui', 
-                      'qkan_speicher.ui', 'qkan_speicherkennlinien.ui', 'qkan_swref.ui', 
+        formsliste = ['qkan_abflussparameter.ui', 'qkan_anbindungageb.ui', 'qkan_anbindungeinleit.ui',
+                      'qkan_anbindungflaechen.ui', 'qkan_auslaesse.ui', 'qkan_auslasstypen.ui',
+                      'qkan_aussengebiete.ui', 'qkan_bodenklassen.ui', 'qkan_einleit.ui',
+                      'qkan_einzugsgebiete.ui', 'qkan_entwaesserungsarten.ui', 'qkan_flaechen.ui',
+                      'qkan_haltungen.ui', 'qkan_profildaten.ui', 'qkan_profile.ui', 'qkan_pumpen.ui',
+                      'qkan_pumpentypen.ui', 'qkan_schaechte.ui', 'qkan_simulationsstatus.ui',
+                      'qkan_speicher.ui', 'qkan_speicherkennlinien.ui', 'qkan_swref.ui',
                       'qkan_teilgebiete.ui', 'qkan_tezg.ui', 'qkan_wehre.ui']
 
         # Lesen der Projektdatei ------------------------------------------------------------------
@@ -1086,15 +1082,22 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
 
         # Pfad zu Formularen auf plugin-Verzeichnis setzen -----------------------------------------
 
-        formspath =  os.path.join(pluginDirectory('qkan'), u"forms")
+        formspath = os.path.join(pluginDirectory('qkan'), u"forms")
         for tag_maplayer in root.findall(u".//projectlayers/maplayer"):
             tag_editform = tag_maplayer.find(u"./editform")
-            dateiname = os.path.basename(tag_editform.text)
-            if dateiname in formsliste:
-                # Nur QKan-Tabellen bearbeiten
-                tag_editform.text = os.path.join(formspath,dateiname)
+            if tag_editform.text:
+                dateiname = os.path.basename(tag_editform.text)
+                if dateiname in formsliste:
+                    # Nur QKan-Tabellen bearbeiten
+                    tag_editform.text = os.path.join(formspath, dateiname)
 
         # Zoom für Kartenfenster einstellen -------------------------------------------------------
+
+        if not isinstance(zoomxmin, (int, float)):
+            zoomxmin = 0.
+            zoomxmax = 100.
+            zoomymin = 0.
+            zoomymax = 100.
 
         for tag_extent in root.findall(u".//mapcanvas/extent"):
             elem = tag_extent.find(u"./xmin")
@@ -1138,20 +1141,14 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # ------------------------------------------------------------------------------
     # Abschluss: Ggfs. Protokoll schreiben und Datenbankverbindungen schliessen
 
-
-
     iface.mainWindow().statusBar().clearMessage()
     iface.messageBar().pushMessage(u"Information", u"Datenimport ist fertig!", level=QgsMessageBar.INFO)
-    QgsMessageLog.logMessage(u"\nFertig: Datenimport erfolgreich!", level=QgsMessageLog.INFO)
+    QgsMessageLog.logMessage(message="\nFertig: Datenimport erfolgreich!", level=Qgis.Info)
 
     # Importiertes Projekt laden
     project = QgsProject.instance()
     # project.read(QFileInfo(projectfile))
-    project.read(QFileInfo(projectfile))  # read the new project file
-    logger.debug(u'Geladene Projektdatei: {}'.format(project.fileName()))
-
-    QgsMapLayerRegistry.instance().reloadAllLayers()
-
+    project.read(projectfile)           # read the new project file
 
 # ----------------------------------------------------------------------------------------------------------------------
 
