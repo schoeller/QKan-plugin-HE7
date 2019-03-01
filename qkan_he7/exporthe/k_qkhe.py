@@ -1701,7 +1701,6 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
             attrsnew =  ', ZUFLUSSOBERERSCHACHT'
             valuesnew = ', 0'
 
-
         for b in dbQK.fetchall():
 
             # In allen Feldern None durch NULL ersetzen
