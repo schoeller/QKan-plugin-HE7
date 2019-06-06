@@ -34,7 +34,7 @@ from qkan.database.qkan_utils import fortschritt, fehlermeldung, meldung, checkn
 from qkan.database.reflists import abflusstypen
 from qkan.linkflaechen.updatelinks import updatelinkfl, updatelinksw, updatelinkageb
 
-logger = logging.getLogger('QKan')
+logger = logging.getLogger('QKan.exporthe.k_qkhe')
 
 progress_bar = None
 

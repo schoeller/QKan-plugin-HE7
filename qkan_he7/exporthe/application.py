@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -39,7 +38,7 @@ from .application_dialog import ExportToHEDialog
 from .k_qkhe import exportKanaldaten
 
 # Anbindung an Logging-System (Initialisierung in __init__)
-logger = logging.getLogger('QKan')
+logger = logging.getLogger('QKan.exporthe.application')
 
 progress_bar = None
 

@@ -36,7 +36,7 @@ from qkan.database.dbfunc import DBConnection
 from qkan.database.fbfunc import FBConnection
 from qkan.database.qkan_utils import fehlermeldung
 
-logger = logging.getLogger(u'QKan')
+logger = logging.getLogger(u'QKan.importhe.results_from_he')
 
 
 # ------------------------------------------------------------------------------

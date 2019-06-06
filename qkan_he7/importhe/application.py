@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -40,7 +39,7 @@ from .results_from_he import importResults
 
 # noinspection PyUnresolvedReferences
 
-LOGGER = logging.getLogger(u'QKan')
+LOGGER = logging.getLogger(u'QKan.importhe.application')
 
 
 class ImportFromHE:

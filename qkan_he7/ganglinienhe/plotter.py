@@ -16,7 +16,7 @@ from qgis.PyQt.QtWidgets import QWidget
 from qkan.database.fbfunc import FBConnection
 from .Enums import SliderMode, LayerType
 
-main_logger = logging.getLogger("QKan")
+main_logger = logging.getLogger("QKan.ganglinienhe\plotter")
 main_logger.info("Plotter-Modul gestartet")
 plots = dict(surface=None, max=None, waterlevel=None)
 

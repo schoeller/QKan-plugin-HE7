@@ -8,7 +8,7 @@ from qgis.PyQt.QtWidgets import QSlider, QStyleOptionSlider, QStyle
 
 from .Enums import SliderMode
 
-main_logger = logging.getLogger("QKan")
+main_logger = logging.getLogger("QKan.ganglinienhe.slider")
 
 
 class Slider(QSlider):

@@ -40,7 +40,7 @@ from qkan.database.dbfunc import DBConnection
 from qkan.database.fbfunc import FBConnection
 from qkan.database.qkan_utils import fehlermeldung, evalNodeTypes
 
-logger = logging.getLogger(u'QKan')
+logger = logging.getLogger(u'QKan.importhe.import_from_he')
 
 
 # ------------------------------------------------------------------------------
