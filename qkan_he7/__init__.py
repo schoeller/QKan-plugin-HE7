@@ -38,12 +38,12 @@ logger = logging.getLogger('QKan.qkan_he7.init')
 
 def classFactory(iface):  # pylint: disable=invalid-name
     try:
-        from qkan import Dummy as MainDummy
-        if not MainDummy.instance:  # QKan isn't loaded
+        from qkan import QKan as MainQKan
+        if not MainQKan.instance:  # QKan isn't loaded
             raise Exception('The QKan main plugin has to be loaded before loading this extension.')
 
-        dummy = Dummy(iface, MainDummy.instance)
-        return dummy
+        qkan = QKan(iface, MainQKan.instance)
+        return qkan
     except ImportError:
         import traceback
         traceback.print_exc()
@@ -51,13 +51,16 @@ def classFactory(iface):  # pylint: disable=invalid-name
         raise Exception('The QKan main plugin has to be installed for this extension to work.')
 
 
-class Dummy:
+class QKan:
     instance = None
     name = __name__
+    config = {}
 
     def __init__(self, iface, main):
         self.main = main
         self.actions = []
+
+        QKan.config = main.config
 
         from .importhe import application as importhe
         from .exporthe import application as exporthe
@@ -67,7 +70,7 @@ class Dummy:
             exporthe.ExportToHE(iface),
             ganglinienhe.Application(iface)
         ]
-        Dummy.instance = self
+        QKan.instance = self
 
         # Register self
         self.main.register(self)

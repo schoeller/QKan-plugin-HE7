@@ -31,7 +31,7 @@ from qgis.utils import iface, pluginDirectory
 
 from qkan.database.dbfunc import DBConnection
 from qkan.database.qkan_utils import get_database_QKan, get_editable_layers, fehlermeldung
-from qkan_he7 import Dummy
+from qkan import QKan
 # noinspection PyUnresolvedReferences
 from . import resources
 from .application_dialog import ExportToHEDialog
@@ -85,103 +85,30 @@ class ExportToHE:
 
         # --------------------------------------------------------------------------
         # Pfad zum Arbeitsverzeichnis sicherstellen
-        wordir = os.path.join(site.getuserbase(), 'qkan')
+        # wordir = os.path.join(site.getuserbase(), 'qkan')
 
-        if not os.path.isdir(wordir):
-            os.makedirs(wordir)
+        # if not os.path.isdir(wordir):
+            # os.makedirs(wordir)
 
         # --------------------------------------------------------------------------
         # Konfigurationsdatei qkan.json lesen
         #
 
-        self.configfil = os.path.join(wordir, 'qkan.json')
-        if os.path.exists(self.configfil):
-            with open(self.configfil, 'r') as fileconfig:
-                self.config = json.loads(fileconfig.read())
-        else:
-            self.config['database_HE'] = ''
-            # Vorlagedatenbank nur für den Fall, dass der Anwender keine eigene Vorlage erstellen will
-            self.config['dbtemplate_HE'] = os.path.join(os.path.dirname(__file__), "templates", "itwh.idbf")
-            self.config['database_QKan'] = ''
-            with open(self.configfil, 'w') as fileconfig:
-                fileconfig.write(json.dumps(self.config))
+        # self.configfil = os.path.join(wordir, 'qkan.json')
+        # if os.path.exists(self.configfil):
+            # with open(self.configfil, 'r') as fileconfig:
+                # self.config = json.loads(fileconfig.read())
+        # else:
+            # self.config['database_HE'] = ''
+            # # Vorlagedatenbank nur für den Fall, dass der Anwender keine eigene Vorlage erstellen will
+            # self.config['dbtemplate_HE'] = os.path.join(os.path.dirname(__file__), "templates", "itwh.idbf")
+            # self.config['database_QKan'] = ''
+            # with open(self.configfil, 'w') as fileconfig:
+                # fileconfig.write(json.dumps(self.config))
 
         # Standard für Suchverzeichnis festlegen
         project = QgsProject.instance()
         self.default_dir = os.path.dirname(project.fileName())
-
-        if 'database_QKan' in self.config:
-            database_QKan = self.config['database_QKan']
-        else:
-            database_QKan = ''
-        self.dlg.tf_QKanDB.setText(database_QKan)
-        self.dlg.pb_selectQKanDB.clicked.connect(self.selectFile_QKanDB)
-
-        if 'database_HE' in self.config:
-            database_HE = self.config['database_HE']
-        else:
-            database_HE = ''
-        self.dlg.tf_heDB_dest.setText(database_HE)
-        self.dlg.pb_selectHeDB_dest.clicked.connect(self.selectFile_HeDB_dest)
-
-        if 'dbtemplate_HE' in self.config:
-            dbtemplate_HE = self.config['dbtemplate_HE']
-        else:
-            dbtemplate_HE = ''
-        self.dlg.tf_heDB_template.setText(dbtemplate_HE)
-        self.dlg.pb_selectHeDB_template.clicked.connect(self.selectFile_HeDB_template)
-        self.dlg.pb_selectHeDB_emptytemplate.clicked.connect(self.selectFile_HeDB_emptytemplate)
-
-        if 'datenbanktyp' in self.config:
-            datenbanktyp = self.config['datenbanktyp']
-        else:
-            datenbanktyp = 'spatialite'
-            pass  # Es gibt noch keine Wahlmöglichkeit
-
-        # Auswahl der zu exportierenden Tabellen ----------------------------------------------
-
-        # Eigene Funktion für die zahlreichen Checkboxen
-
-        def cb_set(name, cbox, default):
-            if name in self.config:
-                checked = self.config[name]
-            else:
-                checked = default
-            cbox.setChecked(checked)
-            return checked
-
-        export_schaechte = cb_set('export_schaechte', self.dlg.cb_export_schaechte, True)
-        export_auslaesse = cb_set('export_auslaesse', self.dlg.cb_export_auslaesse, True)
-        export_speicher = cb_set('export_speicher', self.dlg.cb_export_speicher, True)
-        export_haltungen = cb_set('export_haltungen', self.dlg.cb_export_haltungen, True)
-        export_pumpen = cb_set('export_pumpen', self.dlg.cb_export_pumpen, False)
-        export_wehre = cb_set('export_wehre', self.dlg.cb_export_wehre, False)
-        export_flaechenrw = cb_set('export_flaechenrw', self.dlg.cb_export_flaechenrw, True)
-        export_einleitdirekt = cb_set('export_einleitdirekt', self.dlg.cb_export_einleitdirekt, True)
-        export_aussengebiete = cb_set('export_aussengebiete', self.dlg.cb_export_aussengebiete, True)
-        export_abflussparameter = cb_set('export_abflussparameter', self.dlg.cb_export_abflussparameter, True)
-        export_regenschreiber = cb_set('export_regenschreiber', self.dlg.cb_export_regenschreiber, False)
-        export_rohrprofile = cb_set('export_rohrprofile', self.dlg.cb_export_rohrprofile, False)
-        export_speicherkennlinien = cb_set('export_speicherkennlinien', self.dlg.cb_export_speicherkennlinien, False)
-        export_bodenklassen = cb_set('export_bodenklassen', self.dlg.cb_export_bodenklassen, False)
-
-        modify_schaechte = cb_set('modify_schaechte', self.dlg.cb_modify_schaechte, False)
-        modify_auslaesse = cb_set('modify_auslaesse', self.dlg.cb_modify_auslaesse, False)
-        modify_speicher = cb_set('modify_speicher', self.dlg.cb_modify_speicher, False)
-        modify_haltungen = cb_set('modify_haltungen', self.dlg.cb_modify_haltungen, False)
-        modify_pumpen = cb_set('modify_pumpen', self.dlg.cb_modify_pumpen, False)
-        modify_wehre = cb_set('modify_wehre', self.dlg.cb_modify_wehre, False)
-        modify_flaechenrw = cb_set('modify_flaechenrw', self.dlg.cb_modify_flaechenrw, False)
-        modify_einleitdirekt = cb_set('modify_einleitdirekt', self.dlg.cb_modify_einleitdirekt, False)
-        modify_aussengebiete = cb_set('modify_aussengebiete', self.dlg.cb_modify_aussengebiete, False)
-        modify_abflussparameter = cb_set('modify_abflussparameter', self.dlg.cb_modify_abflussparameter, False)
-        modify_regenschreiber = cb_set('modify_regenschreiber', self.dlg.cb_modify_regenschreiber, False)
-        modify_rohrprofile = cb_set('modify_rohrprofile', self.dlg.cb_modify_rohrprofile, False)
-        modify_speicherkennlinien = cb_set('modify_speicherkennlinien', self.dlg.cb_modify_speicherkennlinien, False)
-        modify_bodenklassen = cb_set('modify_bodenklassen', self.dlg.cb_modify_bodenklassen, False)
-
-        combine_flaechenrw = cb_set('combine_flaechenrw', self.dlg.cb_combine_flaechenrw, True)
-        combine_einleitdirekt = cb_set('combine_einleitdirekt', self.dlg.cb_combine_einleitdirekt, True)
 
         # Formularereignisse anbinden ----------------------------------------------
 
@@ -216,7 +143,7 @@ class ExportToHE:
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
         icon_path = ':/plugins/qkan/exporthe/icon_qk2he.png'
-        Dummy.instance.add_action(icon_path,
+        QKan.instance.add_action(icon_path,
                                   text=self.tr(u'Export to Hystem-Extran'),
                                   callback=self.run,
                                   parent=self.iface.mainWindow())
@@ -437,7 +364,79 @@ class ExportToHE:
 
     def run(self):
         """Run method that performs all the real work"""
-        # show the dialog
+
+        if 'database_QKan' in QKan.config:
+            database_QKan = QKan.config['database_QKan']
+        else:
+            database_QKan = ''
+        self.dlg.tf_QKanDB.setText(database_QKan)
+        self.dlg.pb_selectQKanDB.clicked.connect(self.selectFile_QKanDB)
+
+        if 'database_HE' in QKan.config:
+            database_HE = QKan.config['database_HE']
+        else:
+            database_HE = ''
+        self.dlg.tf_heDB_dest.setText(database_HE)
+        self.dlg.pb_selectHeDB_dest.clicked.connect(self.selectFile_HeDB_dest)
+
+        if 'dbtemplate_HE' in QKan.config:
+            dbtemplate_HE = QKan.config['dbtemplate_HE']
+        else:
+            dbtemplate_HE = ''
+        self.dlg.tf_heDB_template.setText(dbtemplate_HE)
+        self.dlg.pb_selectHeDB_template.clicked.connect(self.selectFile_HeDB_template)
+        self.dlg.pb_selectHeDB_emptytemplate.clicked.connect(self.selectFile_HeDB_emptytemplate)
+
+        if 'datenbanktyp' in QKan.config:
+            datenbanktyp = QKan.config['datenbanktyp']
+        else:
+            datenbanktyp = 'spatialite'
+            pass  # Es gibt noch keine Wahlmöglichkeit
+
+        # Auswahl der zu exportierenden Tabellen ----------------------------------------------
+
+        # Eigene Funktion für die zahlreichen Checkboxen
+
+        def cb_set(name, cbox, default):
+            if name in QKan.config:
+                checked = QKan.config[name]
+            else:
+                checked = default
+            cbox.setChecked(checked)
+            return checked
+
+        export_schaechte = cb_set('export_schaechte', self.dlg.cb_export_schaechte, True)
+        export_auslaesse = cb_set('export_auslaesse', self.dlg.cb_export_auslaesse, True)
+        export_speicher = cb_set('export_speicher', self.dlg.cb_export_speicher, True)
+        export_haltungen = cb_set('export_haltungen', self.dlg.cb_export_haltungen, True)
+        export_pumpen = cb_set('export_pumpen', self.dlg.cb_export_pumpen, False)
+        export_wehre = cb_set('export_wehre', self.dlg.cb_export_wehre, False)
+        export_flaechenrw = cb_set('export_flaechenrw', self.dlg.cb_export_flaechenrw, True)
+        export_einleitdirekt = cb_set('export_einleitdirekt', self.dlg.cb_export_einleitdirekt, True)
+        export_aussengebiete = cb_set('export_aussengebiete', self.dlg.cb_export_aussengebiete, True)
+        export_abflussparameter = cb_set('export_abflussparameter', self.dlg.cb_export_abflussparameter, True)
+        export_regenschreiber = cb_set('export_regenschreiber', self.dlg.cb_export_regenschreiber, False)
+        export_rohrprofile = cb_set('export_rohrprofile', self.dlg.cb_export_rohrprofile, False)
+        export_speicherkennlinien = cb_set('export_speicherkennlinien', self.dlg.cb_export_speicherkennlinien, False)
+        export_bodenklassen = cb_set('export_bodenklassen', self.dlg.cb_export_bodenklassen, False)
+
+        modify_schaechte = cb_set('modify_schaechte', self.dlg.cb_modify_schaechte, False)
+        modify_auslaesse = cb_set('modify_auslaesse', self.dlg.cb_modify_auslaesse, False)
+        modify_speicher = cb_set('modify_speicher', self.dlg.cb_modify_speicher, False)
+        modify_haltungen = cb_set('modify_haltungen', self.dlg.cb_modify_haltungen, False)
+        modify_pumpen = cb_set('modify_pumpen', self.dlg.cb_modify_pumpen, False)
+        modify_wehre = cb_set('modify_wehre', self.dlg.cb_modify_wehre, False)
+        modify_flaechenrw = cb_set('modify_flaechenrw', self.dlg.cb_modify_flaechenrw, False)
+        modify_einleitdirekt = cb_set('modify_einleitdirekt', self.dlg.cb_modify_einleitdirekt, False)
+        modify_aussengebiete = cb_set('modify_aussengebiete', self.dlg.cb_modify_aussengebiete, False)
+        modify_abflussparameter = cb_set('modify_abflussparameter', self.dlg.cb_modify_abflussparameter, False)
+        modify_regenschreiber = cb_set('modify_regenschreiber', self.dlg.cb_modify_regenschreiber, False)
+        modify_rohrprofile = cb_set('modify_rohrprofile', self.dlg.cb_modify_rohrprofile, False)
+        modify_speicherkennlinien = cb_set('modify_speicherkennlinien', self.dlg.cb_modify_speicherkennlinien, False)
+        modify_bodenklassen = cb_set('modify_bodenklassen', self.dlg.cb_modify_bodenklassen, False)
+
+        combine_flaechenrw = cb_set('combine_flaechenrw', self.dlg.cb_combine_flaechenrw, True)
+        combine_einleitdirekt = cb_set('combine_einleitdirekt', self.dlg.cb_combine_einleitdirekt, True)
 
         # Check, ob die relevanten Layer nicht editable sind.
         if len({'flaechen', 'haltungen', 'linkfl', 'tezg', 'schaechte'} & get_editable_layers()) > 0:
@@ -502,8 +501,8 @@ class ExportToHE:
 
         # Zunächst wird die Liste der beim letzten Mal gewählten Teilgebiete aus config gelesen
         liste_teilgebiete = []
-        if 'liste_teilgebiete' in self.config:
-            liste_teilgebiete = self.config['liste_teilgebiete']
+        if 'liste_teilgebiete' in QKan.config:
+            liste_teilgebiete = QKan.config['liste_teilgebiete']
 
         # Abfragen der Tabelle teilgebiete nach Teilgebieten
         sql = 'SELECT "tgnam" FROM "teilgebiete" GROUP BY "tgnam"'
@@ -528,30 +527,30 @@ class ExportToHE:
 
         # Autokorrektur
 
-        if 'autokorrektur' in self.config:
-            autokorrektur = self.config['autokorrektur']
+        if 'autokorrektur' in QKan.config:
+            autokorrektur = QKan.config['autokorrektur']
         else:
             autokorrektur = True
         self.dlg.cb_autokorrektur.setChecked(autokorrektur)
 
         # Festlegung des Fangradius
         # Kann über Menü "Optionen" eingegeben werden
-        if 'fangradius' in self.config:
-            fangradius = self.config['fangradius']
+        if 'fangradius' in QKan.config:
+            fangradius = QKan.config['fangradius']
         else:
             fangradius = u'0.1'
 
         # Haltungsflächen (tezg) berücksichtigen
-        if 'mit_verschneidung' in self.config:
-            mit_verschneidung = self.config['mit_verschneidung']
+        if 'mit_verschneidung' in QKan.config:
+            mit_verschneidung = QKan.config['mit_verschneidung']
         else:
             mit_verschneidung = True
         self.dlg.cb_regardTezg.setChecked(mit_verschneidung)
 
         # Mindestflächengröße
         # Kann über Menü "Optionen" eingegeben werden
-        if 'mindestflaeche' in self.config:
-            mindestflaeche = self.config['mindestflaeche']
+        if 'mindestflaeche' in QKan.config:
+            mindestflaeche = QKan.config['mindestflaeche']
         else:
             mindestflaeche = u'0.5'
 
@@ -559,6 +558,7 @@ class ExportToHE:
 
         # Formular anzeigen
 
+        # show the dialog
         self.dlg.show()
         # Run the dialog event loop
         result = self.dlg.exec_()
@@ -611,22 +611,23 @@ class ExportToHE:
             check_export['combine_einleitdirekt'] = self.dlg.cb_combine_einleitdirekt.isChecked()
 
             # Konfigurationsdaten schreiben
-            self.config['database_HE'] = database_HE
-            self.config['dbtemplate_HE'] = dbtemplate_HE
-            self.config['database_QKan'] = database_QKan
-            self.config['datenbanktyp'] = datenbanktyp
-            self.config['liste_teilgebiete'] = liste_teilgebiete
-            self.config['autokorrektur'] = autokorrektur
-            self.config['fangradius'] = fangradius
-            self.config['mit_verschneidung'] = mit_verschneidung
-            self.config['mindestflaeche'] = mindestflaeche
+            QKan.config['database_HE'] = database_HE
+            QKan.config['dbtemplate_HE'] = dbtemplate_HE
+            QKan.config['database_QKan'] = database_QKan
+            QKan.config['datenbanktyp'] = datenbanktyp
+            QKan.config['liste_teilgebiete'] = liste_teilgebiete
+            QKan.config['autokorrektur'] = autokorrektur
+            QKan.config['fangradius'] = fangradius
+            QKan.config['mit_verschneidung'] = mit_verschneidung
+            QKan.config['mindestflaeche'] = mindestflaeche
 
             for el in check_export:
-                self.config[el] = check_export[el]
+                QKan.config[el] = check_export[el]
 
-            with open(self.configfil, 'w') as fileconfig:
-                # logger.debug(u"Config-Dictionary: {}".format(self.config))
-                fileconfig.write(json.dumps(self.config))
+            qkan = QKan(self.iface)
+            qkan.saveconfig()
+            # with open(self.configfil, 'w') as fileconfig:
+                # fileconfig.write(json.dumps(self.config))
 
             exportKanaldaten(iface, database_HE, dbtemplate_HE, self.dbQK, liste_teilgebiete, autokorrektur,
                              fangradius, mindestflaeche, mit_verschneidung, datenbanktyp, check_export)

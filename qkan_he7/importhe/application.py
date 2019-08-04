@@ -26,11 +26,10 @@ import site
 
 from qgis.PyQt.QtCore import QSettings, QTranslator, qVersion, QCoreApplication
 from qgis.PyQt.QtWidgets import QFileDialog
-from qgis.core import QgsProject
-from qgis.gui import QgsProjectionSelectionDialog
+from qgis.core import QgsProject, QgsCoordinateReferenceSystem
 
 from qkan.database.qkan_utils import get_database_QKan, fehlermeldung
-from qkan_he7 import Dummy
+from qkan import QKan
 # noinspection PyUnresolvedReferences
 from . import resources
 from .application_dialog import ImportFromHEDialog, ResultsFromHEDialog
@@ -80,18 +79,18 @@ class ImportFromHE:
 
         # --------------------------------------------------------------------------------------------------
         # Pfad zum Arbeitsverzeichnis sicherstellen
-        wordir = os.path.join(site.getuserbase(), 'qkan')
+        # wordir = os.path.join(site.getuserbase(), 'qkan')
 
-        if not os.path.isdir(wordir):
-            os.makedirs(wordir)
+        # if not os.path.isdir(wordir):
+            # os.makedirs(wordir)
         # --------------------------------------------------------------------------------------------------
         # Konfigurationsdatei qkan.json lesen
         #
 
-        self.configfil = os.path.join(wordir, 'qkan.json')
-        if os.path.exists(self.configfil):
-            with open(self.configfil, 'r') as fileconfig:
-                self.config = json.loads(fileconfig.read())
+        # self.configfil = os.path.join(wordir, 'qkan.json')
+        # if os.path.exists(self.configfil):
+            # with open(self.configfil, 'r') as fileconfig:
+                # self.config = json.loads(fileconfig.read())
 
         # Standard für Suchverzeichnis festlegen
         project = QgsProject.instance()
@@ -100,7 +99,6 @@ class ImportFromHE:
         # Formularereignisse run_import()
         self.dlg_he.pb_selectqkanDB.clicked.connect(self.selectFile_qkanDBHE)
         self.dlg_he.pb_selectHeDB.clicked.connect(self.selectFile_HeDB)
-        self.dlg_he.pb_selectKBS.clicked.connect(self.selectKBS)
         self.dlg_he.pb_selectProjectFile.clicked.connect(self.selectProjectFile)
 
         # Formularereignisse run_results()
@@ -133,14 +131,14 @@ class ImportFromHE:
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
         icon_import_path = ':/plugins/qkan/importhe/res/icon_import.png'
-        Dummy.instance.add_action(
+        QKan.instance.add_action(
             icon_import_path,
             text=self.tr(u'Import aus Hystem-Extran'),
             callback=self.run_import,
             parent=self.iface.mainWindow())
 
         icon_results_path = ':/plugins/qkan/importhe/res/icon_results.png'
-        Dummy.instance.add_action(
+        QKan.instance.add_action(
             icon_results_path,
             text=self.tr(u'Ergebnisse aus Hystem-Extran einlesen'),
             callback=self.run_results,
@@ -184,21 +182,6 @@ class ImportFromHE:
             os.chdir(os.path.dirname(filename))
         self.dlg_he.tf_projectFile.setText(filename)
 
-    def selectKBS(self):
-        """KBS auswählen. Setzt das KBS für die weiteren Funktionen
-
-        :returns: void
-        """
-        proj_selector = QgsProjectionSelectionDialog()
-        proj_selector.exec_()
-        erg = proj_selector.crs().geographicCrsAuthId()
-        if len(erg.split(u':')) == 2:
-            self.dlg_he.tf_epsg.setText(erg.split(u':')[1])
-        else:
-            self.dlg_he.tf_epsg.setText(erg)
-
-    # Formularfunktionen zum Lesen der LZ-Ergebnisse ----------------------------------------------
-
     def selectFile_HELZ(self):
         """Datenbankverbindung zur HE-Datenbank (Firebird) auswaehlen"""
 
@@ -215,26 +198,26 @@ class ImportFromHE:
     def run_import(self):
         """Öffnen des Formulars zum Import aus HE"""
 
-        if 'database_QKan' in self.config:
-            database_QKan = self.config['database_QKan']
+        if 'database_QKan' in QKan.config:
+            database_QKan = QKan.config['database_QKan']
         else:
             database_QKan = ''
         self.dlg_he.tf_qkanDB.setText(database_QKan)
 
-        if 'database_HE' in self.config:
-            database_HE = self.config['database_HE']
+        if 'database_HE' in QKan.config:
+            database_HE = QKan.config['database_HE']
         else:
             database_HE = ''
         self.dlg_he.tf_heDB.setText(database_HE)
 
-        if 'epsg' in self.config:
-            self.epsg = self.config['epsg']
+        if 'epsg' in QKan.config:
+            self.epsg = QKan.config['epsg']
         else:
             self.epsg = u'25832'
-        self.dlg_he.tf_epsg.setText(self.epsg)
+        self.dlg_he.qsw_epsg.setCrs(QgsCoordinateReferenceSystem.fromEpsgId(int(self.epsg)))
 
-        if 'projectfile' in self.config:
-            projectfile = self.config['projectfile']
+        if 'projectfile' in QKan.config:
+            projectfile = QKan.config['projectfile']
         else:
             projectfile = ''
         self.dlg_he.tf_projectFile.setText(projectfile)
@@ -258,17 +241,19 @@ class ImportFromHE:
             database_HE = self.dlg_he.tf_heDB.text()
             database_QKan = self.dlg_he.tf_qkanDB.text()
             projectfile = self.dlg_he.tf_projectFile.text()
-            self.epsg = self.dlg_he.tf_epsg.text()
+            self.epsg = str(self.dlg_he.qsw_epsg.crs().postgisSrid())
 
             # Konfigurationsdaten schreiben
 
-            self.config['epsg'] = self.epsg
-            self.config['database_QKan'] = database_QKan
-            self.config['database_HE'] = database_HE
-            self.config['projectfile'] = projectfile
+            QKan.config['epsg'] = self.epsg
+            QKan.config['database_QKan'] = database_QKan
+            QKan.config['database_HE'] = database_HE
+            QKan.config['projectfile'] = projectfile
 
-            with open(self.configfil, 'w') as fileconfig:
-                fileconfig.write(json.dumps(self.config))
+            qkan = QKan(self.iface)
+            qkan.saveconfig()
+            # with open(self.configfil, 'w') as fileconfig:
+                # fileconfig.write(json.dumps(self.config))
 
             # Start der Verarbeitung
 
@@ -316,15 +301,15 @@ class ImportFromHE:
         database_QKan, epsg = get_database_QKan()
 
         # Auswahl der HE-Ergebnisdatenbank zum Laden
-        if 'database_ErgHE' in self.config:
-            database_ErgHE = self.config['database_ErgHE']
+        if 'database_ErgHE' in QKan.config:
+            database_ErgHE = QKan.config['database_ErgHE']
         else:
             database_ErgHE = ''
         self.dlg_lz.tf_heDB.setText(database_ErgHE)
 
         # Option für Stildatei
-        if 'qml_choice' in self.config:
-            qml_choice = self.config['qml_choice']
+        if 'qml_choice' in QKan.config:
+            qml_choice = QKan.config['qml_choice']
         else:
             qml_choice = u'uebh'
 
@@ -346,8 +331,8 @@ class ImportFromHE:
             return False
 
         # Individuelle Stildatei
-        if 'qmlfileResults' in self.config:
-            qmlfileResults = self.config['qmlfileResults']
+        if 'qmlfileResults' in QKan.config:
+            qmlfileResults = QKan.config['qmlfileResults']
         else:
             qmlfileResults = ''
         self.dlg_lz.tf_qmlfile.setText(qmlfileResults)
@@ -377,13 +362,15 @@ class ImportFromHE:
                 return False
             # Konfigurationsdaten schreiben
 
-            self.config['database_QKan'] = database_QKan
-            self.config['database_ErgHE'] = database_ErgHE
-            self.config['qmlfileResults'] = qmlfileResults
-            self.config['qml_choice'] = qml_choice
+            QKan.config['database_QKan'] = database_QKan
+            QKan.config['database_ErgHE'] = database_ErgHE
+            QKan.config['qmlfileResults'] = qmlfileResults
+            QKan.config['qml_choice'] = qml_choice
 
-            with open(self.configfil, 'w') as fileconfig:
-                fileconfig.write(json.dumps(self.config))
+            qkan = QKan(self.iface)
+            qkan.saveconfig()
+            # with open(self.configfil, 'w') as fileconfig:
+                # fileconfig.write(json.dumps(self.config))
 
             # Start der Verarbeitung
 

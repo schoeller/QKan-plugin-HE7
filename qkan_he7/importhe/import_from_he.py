@@ -32,9 +32,8 @@ import os
 import xml.etree.ElementTree as ET
 
 from qgis.PyQt.QtCore import QFileInfo
-from qgis.core import QgsMessageLog, QgsProject, QgsCoordinateReferenceSystem
-from qgis.gui import QgsMessageBar
-from qgis.utils import iface, pluginDirectory
+from qgis.core import QgsProject, QgsCoordinateReferenceSystem
+from qgis.utils import pluginDirectory
 
 from qkan.database.dbfunc import DBConnection
 from qkan.database.fbfunc import FBConnection
@@ -177,14 +176,14 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # Haltungsdaten in die QKan-DB schreiben
 
     for attr in daten:
-        (haltnam_ansi, schoben_ansi, schunten_ansi, hoehe, breite, laenge, sohleoben, sohleunten,
-         deckeloben, deckelunten, teilgebiet, profiltyp_he, profilnam_ansi,
-         entwaesserungsart_he, ks, simstat_he, kommentar_ansi, createdat, xob, yob, xun, yun) = \
+        (haltnam, schoben, schunten, hoehe, breite, laenge, sohleoben, sohleunten,
+         deckeloben, deckelunten, teilgebiet, profiltyp_he, profilnam,
+         entwaesserungsart_he, ks, simstat_he, kommentar, createdat, xob, yob, xun, yun) = \
             ['NULL' if el is None else el for el in attr]
 
-        (haltnam, schoben, schunten, profilnam, kommentar) = \
-            [tt.decode('iso-8859-1') for tt in (haltnam_ansi, schoben_ansi, schunten_ansi,
-                                                profilnam_ansi, kommentar_ansi)]
+        # (haltnam, schoben, schunten, profilnam, kommentar) = \
+            # [tt.decode('iso-8859-1') for tt in (haltnam_ansi, schoben_ansi, schunten_ansi,
+                                                # profilnam_ansi, kommentar_ansi)]
 
         # Anwendung der Referenzlisten HE -> QKan
 
@@ -305,10 +304,10 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # Schachtdaten aufbereiten und in die QKan-DB schreiben
 
     for attr in daten:
-        (schnam_ansi, xsch, ysch, sohlhoehe, deckelhoehe, durchm, druckdicht, entwaesserungsart_he,
-         simstat_he, kommentar_ansi, createdat) = ['NULL' if el is None else el for el in attr]
+        (schnam, xsch, ysch, sohlhoehe, deckelhoehe, durchm, druckdicht, entwaesserungsart_he,
+         simstat_he, kommentar, createdat) = ['NULL' if el is None else el for el in attr]
 
-        (schnam, kommentar) = [tt.decode('iso-8859-1') for tt in (schnam_ansi, kommentar_ansi)]
+        # (schnam, kommentar) = [tt.decode('iso-8859-1') for tt in (schnam_ansi, kommentar_ansi)]
 
         # Entwasserungsarten
         if entwaesserungsart_he in ref_entwart:
@@ -397,10 +396,10 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
 
     logger.debug(u'simstatus[0]: {}'.format(ref_simulationsstatus[0]))
     for attr in daten:
-        (schnam_ansi, deckelhoehe, sohlhoehe, xsch, ysch, ueberstauflaeche, simstat_he, kommentar_ansi,
+        (schnam, deckelhoehe, sohlhoehe, xsch, ysch, ueberstauflaeche, simstat_he, kommentar,
          createdat) = ['NULL' if el is None else el for el in attr]
 
-        (schnam, kommentar) = [tt.decode('iso-8859-1') for tt in (schnam_ansi, kommentar_ansi)]
+        # (schnam, kommentar) = [tt.decode('iso-8859-1') for tt in (schnam_ansi, kommentar_ansi)]
 
         # Simstatus-Nr aus HE ersetzten
         if simstat_he in ref_simulationsstatus:
@@ -475,10 +474,10 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # Daten aufbereiten und in die QKan-DB schreiben
 
     for attr in daten:
-        (schnam_ansi, xsch, ysch, sohlhoehe, deckelhoehe, typ_he, simstat_he, kommentar_ansi, createdat) = \
+        (schnam, xsch, ysch, sohlhoehe, deckelhoehe, typ_he, simstat_he, kommentar, createdat) = \
             ['NULL' if el is None else el for el in attr]
 
-        (schnam, kommentar) = [tt.decode('iso-8859-1') for tt in (schnam_ansi, kommentar_ansi)]
+        # (schnam, kommentar) = [tt.decode('iso-8859-1') for tt in (schnam_ansi, kommentar_ansi)]
 
         # Auslasstyp-Nr aus HE ersetzten
         if typ_he in ref_auslasstypen:
@@ -572,11 +571,11 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # Pumpendaten in die QKan-DB schreiben
 
     for attr in daten:
-        (pnam_ansi, schoben_ansi, schunten_ansi, typ_he, steuersch, einschalthoehe, ausschalthoehe,
-         xob, yob, xun, yun, simstat_he, kommentar_ansi, createdat) = ['NULL' if el is None else el for el in attr]
+        (pnam, schoben, schunten, typ_he, steuersch, einschalthoehe, ausschalthoehe,
+         xob, yob, xun, yun, simstat_he, kommentar, createdat) = ['NULL' if el is None else el for el in attr]
 
-        (pnam, schoben, schunten, kommentar) = [tt.decode('iso-8859-1') for tt in (pnam_ansi, schoben_ansi,
-                                                                                   schunten_ansi, kommentar_ansi)]
+        # (pnam, schoben, schunten, kommentar) = [tt.decode('iso-8859-1') for tt in (pnam_ansi, schoben_ansi,
+                                                                                   # schunten_ansi, kommentar_ansi)]
 
         # Pumpentyp-Nr aus HE ersetzten
         if typ_he in ref_pumpentyp:
@@ -684,11 +683,11 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # Wehrdaten in die QKan-DB schreiben
 
     for attr in daten:
-        (wnam_ansi, schoben_ansi, schunten_ansi, typ_he, schwellenhoehe, kammerhoehe, laenge, uebeiwert,
-         xob, yob, xun, yun, simstat_he, kommentar_ansi, createdat) = ['NULL' if el is None else el for el in attr]
+        (wnam, schoben, schunten, typ_he, schwellenhoehe, kammerhoehe, laenge, uebeiwert,
+         xob, yob, xun, yun, simstat_he, kommentar, createdat) = ['NULL' if el is None else el for el in attr]
 
-        (wnam, schoben, schunten, kommentar) = [tt.decode('iso-8859-1') for tt in (wnam_ansi, schoben_ansi,
-                                                                                   schunten_ansi, kommentar_ansi)]
+        # (wnam, schoben, schunten, kommentar) = [tt.decode('iso-8859-1') for tt in (wnam_ansi, schoben_ansi,
+                                                                                   # schunten_ansi, kommentar_ansi)]
 
         # Simstatus-Nr aus HE ersetzten
         if simstat_he in ref_simulationsstatus:
@@ -776,10 +775,10 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # Teileinzugsgebietsdaten in die QKan-DB schreiben
 
     for attr in daten:
-        (tgnam_ansi, ewdichte, wverbrauch, stdmittel, fremdwas, flaeche, kommentar_ansi, createdat) = [
+        (tgnam, ewdichte, wverbrauch, stdmittel, fremdwas, flaeche, kommentar, createdat) = [
             u'NULL' if el is None else el for el in attr]
 
-        (tgnam, kommentar) = [tt.decode('iso-8859-1') for tt in (tgnam_ansi, kommentar_ansi)]
+        # (tgnam, kommentar) = [tt.decode('iso-8859-1') for tt in (tgnam_ansi, kommentar_ansi)]
 
         # Datensatz aufbereiten und in die QKan-DB schreiben
 
@@ -830,9 +829,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # Speicherdaten in die QKan-DB schreiben
 
     for attr in daten:
-        (schnam_ansi, wspiegel, oberfl) = ['NULL' if el is None else el for el in attr]
+        (schnam, wspiegel, oberfl) = ['NULL' if el is None else el for el in attr]
 
-        schnam = schnam_ansi.decode('iso-8859-1')
+        # schnam = schnam_ansi.decode('iso-8859-1')
 
         # Datensatz aufbereiten und in die QKan-DB schreiben
 
@@ -870,9 +869,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # Profil in die QKan-DB schreiben
 
     for attr in daten:
-        (profilnam_ansi, wspiegel, wbreite) = ['NULL' if el is None else el for el in attr]
+        (profilnam, wspiegel, wbreite) = ['NULL' if el is None else el for el in attr]
 
-        profilnam = profilnam_ansi.decode('iso-8859-1')
+        # profilnam = profilnam_ansi.decode('iso-8859-1')
 
         # Datensatz aufbereiten und in die QKan-DB schreiben
 
@@ -896,7 +895,7 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # Daten aUS ITWH-Datenbank abfragen
     sql = u'''
         SELECT 
-            NAME AS apnam_ansi,
+            NAME AS apnam,
             ABFLUSSBEIWERTANFANG AS anfangsabflussbeiwert,
             ABFLUSSBEIWERTENDE AS endabflussbeiwert,
             MULDENVERLUST AS muldenverlust,
@@ -904,9 +903,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
             BENETZUNGSPEICHERSTART AS benetzung_startwert,
             MULDENAUFFUELLGRADSTART AS mulden_startwert,
             TYP AS aptyp,
-            BODENKLASSE AS bodenklasse_ansi,
+            BODENKLASSE AS bodenklasse,
             LASTMODIFIED AS createdat,
-            KOMMENTAR AS kommentar_ansi
+            KOMMENTAR AS kommentar
         FROM ABFLUSSPARAMETER'''
 
     dbHE.sql(sql)
@@ -921,12 +920,12 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     datqk = [el[0] for el in dbQK.fetchall()]
 
     for attr in daten:
-        (apnam_ansi, anfangsabflussbeiwert, endabflussbeiwert, muldenverlust, benetzungsverlust,
-         benetzung_startwert, mulden_startwert, aptyp, bodenklasse_ansi, createdat, kommentar_ansi) = \
+        (apnam, anfangsabflussbeiwert, endabflussbeiwert, muldenverlust, benetzungsverlust,
+         benetzung_startwert, mulden_startwert, aptyp, bodenklasse, createdat, kommentar) = \
             ['NULL' if el is None else el for el in attr]
 
-        (apnam, bodenklasse, kommentar) = [tt.decode('iso-8859-1') for tt in
-                                           (apnam_ansi, bodenklasse_ansi, kommentar_ansi)]
+        # (apnam, bodenklasse, kommentar) = [tt.decode('iso-8859-1') for tt in
+                                           # (apnam_ansi, bodenklasse_ansi, kommentar_ansi)]
 
         if aptyp == 0:
             bodenklasse = u'NULL'  # in QKan default für befestigte Flächen
@@ -1141,9 +1140,9 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
     # ------------------------------------------------------------------------------
     # Abschluss: Ggfs. Protokoll schreiben und Datenbankverbindungen schliessen
 
-    iface.mainWindow().statusBar().clearMessage()
-    iface.messageBar().pushMessage(u"Information", u"Datenimport ist fertig!", level=QgsMessageBar.INFO)
-    QgsMessageLog.logMessage(message="\nFertig: Datenimport erfolgreich!", level=Qgis.Info)
+    # iface.mainWindow().statusBar().clearMessage()
+    # iface.messageBar().pushMessage(u"Information", u"Datenimport ist fertig!", level=QgsMessageBar.INFO)
+    # QgsMessageLog.logMessage(message="\nFertig: Datenimport erfolgreich!", level=Qgis.Info)
 
     # Importiertes Projekt laden
     project = QgsProject.instance()

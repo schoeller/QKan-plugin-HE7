@@ -30,7 +30,7 @@ from qgis.PyQt.QtWidgets import QMessageBox, QFileDialog, QGridLayout, QLabel
 
 from qkan.database.fbfunc import FBConnection
 from qkan.database.navigation import Navigator
-from qkan_he7 import Dummy
+from qkan_he7 import QKan
 # noinspection PyUnresolvedReferences
 from . import plotter, resources, slider as s
 from .Enums import SliderMode, Type, LayerType
@@ -82,13 +82,13 @@ class Application:
         icon_forward = ':/plugins/qkan/ganglinienhe/icon_forward.png'
         icon_backward = ':/plugins/qkan/ganglinienhe/icon_backward.png'
 
-        Dummy.instance.add_action(
+        QKan.instance.add_action(
             icon_path_laengs,
             text=u'Längsschnitt-Tool',
             callback=self.__run,
             parent=self.__iface.mainWindow()
         )
-        Dummy.instance.add_action(
+        QKan.instance.add_action(
             icon_path_gangl,
             text=u'Ganglinien-Tool',
             callback=self.__run_ganglinie,

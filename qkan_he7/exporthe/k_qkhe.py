@@ -88,7 +88,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
     progress_bar.setRange(0, 100)
     status_message = iface.messageBar().createMessage(u"", u"Export in Arbeit. Bitte warten.")
     status_message.layout().addWidget(progress_bar)
-    iface.messageBar().pushWidget(status_message, Qgis.Info, 10)
+    # iface.messageBar().pushWidget(status_message, Qgis.Info, 10)
 
     # Referenzliste der Abflusstypen für HYSTEM-EXTRAN
     he_fltyp_ref = abflusstypen('he')
@@ -1456,9 +1456,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                         return False
 
                     dbQK.commit()
-                    iface.messageBar().pushMessage(u"Tabelle 'einzugsgebiete':\n",
-                                                   u"Es wurden {} Einzugsgebiete hinzugefügt".format(len(tgb)),
-                                                   level=Qgis.Info, duration=3)
+                    meldung(u"Tabelle 'einzugsgebiete':\n",
+                           "Es wurden {} Einzugsgebiete hinzugefügt".format(len(tgb)))
 
                 # Kontrolle mit Warnung
                 sql = u"""
@@ -1474,9 +1473,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
 
                 anz = int(dbQK.fetchone()[0])
                 if anz > 0:
-                    iface.messageBar().pushMessage(u"Fehlerhafte Daten in Tabelle 'einleit':",
-                                                   u"{} Einleitpunkte sind keinem Einzugsgebiet zugeordnet".format(anz),
-                                                   level=Qgis.Warning, duration=0)
+                    meldung("Fehlerhafte Daten in Tabelle 'einleit':",
+                            "{} Einleitpunkte sind keinem Einzugsgebiet zugeordnet".format(anz))
         else:
             # 2 Einzugsgebiete in QKan ----------------------------------------------------
             sql = u"""
@@ -1501,9 +1499,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                         return False
 
                     dbQK.commit()
-                    iface.messageBar().pushMessage(u"Tabelle 'einleit':\n",
-                                                   u"Alle Einleitpunkte in der Tabelle 'einleit' wurden einem Einzugsgebiet zugeordnet",
-                                                   level=Qgis.Info, duration=3)
+                    meldung("Tabelle 'einleit':\n",
+                            "Alle Einleitpunkte in der Tabelle 'einleit' wurden einem Einzugsgebiet zugeordnet")
                 else:
                     # 2.1.2 Es existieren mehrere Einzugsgebiete ------------------------------------------
                     sql = u"""UPDATE einleit SET einzugsgebiet = (SELECT tgnam FROM einzugsgebiete
@@ -1515,9 +1512,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                         return False
 
                     dbQK.commit()
-                    iface.messageBar().pushMessage(u"Tabelle 'einleit':\n",
-                                                   u"Alle Einleitpunkte in der Tabelle 'einleit' wurden dem Einzugsgebiet zugeordnet, in dem sie liegen.",
-                                                   level=Qgis.Info, duration=3)
+                    meldung("Tabelle 'einleit':\n",
+                            "Alle Einleitpunkte in der Tabelle 'einleit' wurden dem Einzugsgebiet zugeordnet, in dem sie liegen.")
 
                     # Kontrolle mit Warnung
                     sql = u"""
@@ -1532,10 +1528,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
 
                     anz = int(dbQK.fetchone()[0])
                     if anz > 0:
-                        iface.messageBar().pushMessage(u"Fehlerhafte Daten in Tabelle 'einleit':",
-                                                       u"{} Einleitpunkte sind keinem Einzugsgebiet zugeordnet".format(
-                                                           anz),
-                                                       level=Qgis.Warning, duration=0)
+                        meldung("Fehlerhafte Daten in Tabelle 'einleit':",
+                                "{} Einleitpunkte sind keinem Einzugsgebiet zugeordnet".format(anz))
             else:
                 # 2.2 Es gibt Einleitpunkte mit zugeordnetem Einzugsgebiet
                 # Kontrolle mit Warnung
@@ -1552,9 +1546,8 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
 
                 anz = int(dbQK.fetchone()[0])
                 if anz > 0:
-                    iface.messageBar().pushMessage(u"Fehlerhafte Daten in Tabelle 'einleit':",
-                                                   u"{} Einleitpunkte sind keinem Einzugsgebiet zugeordnet".format(anz),
-                                                   level=Qgis.Warning, duration=0)
+                    meldung("Fehlerhafte Daten in Tabelle 'einleit':",
+                            "{} Einleitpunkte sind keinem Einzugsgebiet zugeordnet".format(anz))
 
         # --------------------------------------------------------------------------------------------
         # Export der Einzeleinleiter aus Schmutzwasser
@@ -2111,4 +2104,4 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
     fortschritt(u'Ende...', 1)
     progress_bar.setValue(100)
     status_message.setText(u"Datenexport abgeschlossen.")
-    status_message.setLevel(Qgis.Success)
+    # status_message.setLevel(Qgis.Success)
