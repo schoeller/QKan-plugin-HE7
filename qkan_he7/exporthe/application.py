@@ -624,10 +624,7 @@ class ExportToHE:
             for el in check_export:
                 QKan.config[el] = check_export[el]
 
-            qkan = QKan(self.iface)
-            qkan.saveconfig()
-            # with open(self.configfil, 'w') as fileconfig:
-                # fileconfig.write(json.dumps(self.config))
+            QKan.save_config()
 
             exportKanaldaten(iface, database_HE, dbtemplate_HE, self.dbQK, liste_teilgebiete, autokorrektur,
                              fangradius, mindestflaeche, mit_verschneidung, datenbanktyp, check_export)

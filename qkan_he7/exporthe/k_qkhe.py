@@ -1154,7 +1154,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                   fl.abflussparameter AS abflussparameter, fl.createdat AS createdat,
                   fl.kommentar AS kommentar, 
                   CASE WHEN {case_verschneidung} THEN fl.geom 
-                  ELSE CastToMultiPolygon(intersection(fl.geom,tg.geom)) END AS geom
+                  ELSE CastToMultiPolygon(CollectionExtract(intersection(fl.geom,tg.geom),3)) END AS geom
                 FROM linkfl AS lf
                 INNER JOIN flaechen AS fl
                 ON lf.flnam = fl.flnam{join_verschneidung})
@@ -1183,7 +1183,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                   lf.abflusstyp AS abflusstyp, lf.speicherzahl AS speicherzahl, lf.speicherkonst AS speicherkonst,
                   lf.fliesszeitflaeche AS fliesszeitflaeche, lf.fliesszeitkanal AS fliesszeitkanal,
                   CASE WHEN {case_verschneidung} THEN area(fl.geom)/10000 
-                  ELSE area(CastToMultiPolygon(intersection(fl.geom,tg.geom)))/10000 END AS flaeche, 
+                  ELSE area(CastToMultiPolygon(CollectionExtract(intersection(fl.geom,tg.geom),3)))/10000 END AS flaeche, 
                   fl.regenschreiber AS regenschreiber,
                   fl.abflussparameter AS abflussparameter, fl.createdat AS createdat,
                   fl.kommentar AS kommentar

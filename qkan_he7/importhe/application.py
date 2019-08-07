@@ -250,8 +250,7 @@ class ImportFromHE:
             QKan.config['database_HE'] = database_HE
             QKan.config['projectfile'] = projectfile
 
-            qkan = QKan(self.iface)
-            qkan.saveconfig()
+            QKan.save_config()
             # with open(self.configfil, 'w') as fileconfig:
                 # fileconfig.write(json.dumps(self.config))
 
@@ -367,10 +366,7 @@ class ImportFromHE:
             QKan.config['qmlfileResults'] = qmlfileResults
             QKan.config['qml_choice'] = qml_choice
 
-            qkan = QKan(self.iface)
-            qkan.saveconfig()
-            # with open(self.configfil, 'w') as fileconfig:
-                # fileconfig.write(json.dumps(self.config))
+            QKan.save_config()
 
             # Start der Verarbeitung
 
