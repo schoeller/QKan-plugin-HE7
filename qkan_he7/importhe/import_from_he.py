@@ -1110,7 +1110,7 @@ def importKanaldaten(database_HE, database_QKan, projectfile, epsg,
 
         # Projektionssystem anpassen --------------------------------------------------------------
 
-        for tag_spatialrefsys in root.findall(u".//mapcanvas/destinationsrs/spatialrefsys"):
+        for tag_spatialrefsys in root.findall(u".//projectCrs/spatialrefsys"):
             tag_spatialrefsys.clear()
 
             elem = ET.SubElement(tag_spatialrefsys, u'proj4')

@@ -39,7 +39,7 @@ from .ganglinie import Ganglinie
 
 # Initialize Qt resources from file resources.py
 
-main_logger = logging.getLogger("QKan.ganglinienhe\application.main")
+main_logger = logging.getLogger("QKan.ganglinienhe.application.main")
 main_logger.info("Application-Modul gestartet")
 
 

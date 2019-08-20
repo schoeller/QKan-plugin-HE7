@@ -563,6 +563,263 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
     progress_bar.setValue(50)
 
     # --------------------------------------------------------------------------------------------
+    # Export der Pumpen
+    #
+
+    if check_export['export_pumpen'] or check_export['modify_pumpen']:
+
+        # Nur Daten fuer ausgewaehlte Teilgebiete
+        if len(liste_teilgebiete) != 0:
+            auswahl = u" WHERE pumpen.teilgebiet in ('{}')".format(u"', '".join(liste_teilgebiete))
+        else:
+            auswahl = u""
+
+        sql = u"""
+            SELECT
+                pumpen.pnam AS pnam,
+                pumpen.schoben AS schoben,
+                pumpen.schunten AS schunten,
+                pumpentypen.he_nr AS pumpentypnr,
+                pumpen.steuersch AS steuersch,
+                pumpen.einschalthoehe AS einschalthoehe_t,
+                pumpen.ausschalthoehe AS ausschalthoehe_t,
+                simulationsstatus.he_nr AS simstatusnr,
+                pumpen.kommentar AS kommentar,
+                pumpen.createdat AS createdat
+            FROM pumpen
+            LEFT JOIN pumpentypen
+            ON pumpen.pumpentyp = pumpentypen.bezeichnung
+            LEFT JOIN simulationsstatus
+            ON pumpen.simstatus = simulationsstatus.bezeichnung{}
+            """.format(auswahl)
+
+        if not dbQK.sql(sql, u'dbQK: k_qkhe.export_pumpen'):
+            del dbHE
+            return False
+
+        nr0 = nextid
+
+        fortschritt(u'Export Pumpen...', 0.60)
+
+        for attr in dbQK.fetchall():
+
+            # In allen Feldern None durch NULL ersetzen
+            (pnam, schoben, schunten, pumpentypnr, steuersch, 
+             einschalthoehe_t, ausschalthoehe_t, simstatusnr, kommentar, createdat) = \
+                (u'NULL' if el is None else el for el in attr)
+
+            # Formatierung der Zahlen
+            (einschalthoehe, ausschalthoehe) = \
+                (u'NULL' if tt == u'NULL' else u'{:.3f}'.format(float(tt)) \
+                 for tt in (einschalthoehe_t, ausschalthoehe_t))
+
+            # Standardwerte, falls keine Vorgaben
+            if createdat_t == u'NULL':
+                createdat = time.strftime(u'%d.%m.%Y %H:%M:%S', time.localtime())
+            else:
+                try:
+                    if createdat_t.count(':') == 1:
+                        createdat_s = time.strptime(createdat_t, '%d.%m.%Y %H:%M')
+                    else:
+                        createdat_s = time.strptime(createdat_t, '%d.%m.%Y %H:%M:%S')
+                except:
+                    createdat_s = time.localtime()
+                createdat = time.strftime(u'%d.%m.%Y %H:%M:%S', createdat_s)
+
+            # Ändern vorhandener Datensätze (geschickterweise vor dem Einfügen!)
+            if check_export['modify_pumpen']:
+                sql = u"""
+                    UPDATE PUMPE SET
+                    TYP={typ}, SCHACHTOBEN='{schoben}', SCHACHTUNTEN='{schunten}', 
+                    STEUERSCHACHT='{steuersch}', 
+                    EINSCHALTHOEHE={einschalthoehe}, 
+                    AUSSCHALTHOEHE={ausschalthoehe}, PLANUNGSSTATUS={simstatusnr},
+                    LASTMODIFIED='{lastmodified}', KOMMENTAR='{kommentar}'
+                    WHERE NAME = '{name}';
+                """.format(name=pnam, typ=pumpentypnr, schoben=schoben, schunten=schunten,
+                           steuersch=steuersch,
+                           einschalthoehe=einschalthoehe, ausschalthoehe=ausschalthoehe,
+                           simstatusnr=simstatusnr,
+                           lastmodified=createdat, kommentar=kommentar)
+
+                if not dbHE.sql(sql, u'dbHE: export_pumpen (1)'):
+                    del dbQK
+                    return False
+
+            # Einfuegen in die Datenbank
+            if check_export['export_pumpen']:
+                sql = u"""
+                    INSERT INTO PUMPE
+                    ( ID, NAME, TYP, SCHACHTOBEN, SCHACHTUNTEN, 
+                      STEUERSCHACHT, EINSCHALTHOEHE, 
+                      AUSSCHALTHOEHE, PLANUNGSSTATUS,
+                      LASTMODIFIED, KOMMENTAR)
+                    SELECT
+                      {id}, '{name}', {typ}, '{schoben}', '{schunten}', 
+                      '{steuersch}', {einschalthoehe}, {ausschalthoehe}, 
+                      {simstatusnr},
+                      '{lastmodified}', '{kommentar}'
+                    FROM RDB$DATABASE
+                    WHERE '{name}' NOT IN (SELECT NAME FROM PUMPE);
+                """.format(id=nextid, name=pnam, typ=pumpentypnr, schoben=schoben, schunten=schunten, 
+                           steuersch=steuersch, 
+                           einschalthoehe=einschalthoehe, ausschalthoehe=ausschalthoehe,
+                           simstatusnr=simstatusnr,
+                           lastmodified=createdat, kommentar=kommentar)
+
+                if not dbHE.sql(sql, u'dbHE: export_pumpen (2)'):
+                    del dbQK
+                    return False
+
+                nextid += 1
+
+        dbHE.sql(u"UPDATE ITWH$PROGINFO SET NEXTID = {:d}".format(nextid))
+        dbHE.commit()
+
+        fortschritt(u'{} Pumpen eingefuegt'.format(nextid - nr0), 0.40)
+    progress_bar.setValue(60)
+
+    # --------------------------------------------------------------------------------------------
+    # Export der Wehre
+    #
+
+    if check_export['export_wehre'] or check_export['modify_wehre']:
+
+        # Nur Daten fuer ausgewaehlte Teilgebiete
+        if len(liste_teilgebiete) != 0:
+            auswahl = u" WHERE wehre.teilgebiet in ('{}')".format(u"', '".join(liste_teilgebiete))
+        else:
+            auswahl = u""
+
+        sql = u"""
+            SELECT
+                wehre.wnam AS wnam,
+                wehre.schoben AS schoben,
+                wehre.schunten AS schunten,
+                coalesce(sob.sohlhoehe, 0) AS sohleoben_t,
+                coalesce(sun.sohlhoehe, 0) AS sohleunten_t,
+                wehre.schwellenhoehe AS schwellenhoehe_t,
+                wehre.kammerhoehe AS kammerhoehe_t,
+                wehre.laenge AS laenge_t,
+                wehre.uebeiwert AS uebeiwert_t,
+                simulationsstatus.he_nr AS simstatusnr,
+                wehre.kommentar AS kommentar,
+                wehre.createdat AS createdat
+            FROM wehre
+            LEFT JOIN simulationsstatus
+            ON wehre.simstatus = simulationsstatus.bezeichnung
+            LEFT JOIN schaechte AS sob 
+            ON wehre.schoben = sob.schnam
+            LEFT JOIN schaechte AS sun 
+            ON wehre.schunten = sun.schnam{}
+            """.format(auswahl)
+
+        if not dbQK.sql(sql, u'dbQK: k_qkhe.export_wehre'):
+            del dbHE
+            return False
+
+        nr0 = nextid
+
+        fortschritt(u'Export Wehre...', 0.65)
+
+        for attr in dbQK.fetchall():
+
+            # In allen Feldern None durch NULL ersetzen
+            (wnam, schoben, schunten, sohleoben_t, sohleunten_t, schwellenhoehe_t, kammerhoehe_t,
+             laenge_t, uebeiwert_t, simstatusnr, 
+             kommentar, createdat) = \
+            (u'NULL' if el is None else el for el in attr)
+
+            # Formatierung der Zahlen
+            (sohleoben, sohleunten, schwellenhoehe, 
+                    kammerhoehe, laenge, uebeiwert) = \
+                (u'NULL' if tt == u'NULL' else u'{:.3f}'.format(float(tt)) \
+                 for tt in (sohleoben_t, sohleunten_t, schwellenhoehe_t, 
+                             kammerhoehe_t, laenge_t, uebeiwert_t))
+
+            # Standardwerte, falls keine Vorgaben
+            if createdat_t == u'NULL':
+                createdat = time.strftime(u'%d.%m.%Y %H:%M:%S', time.localtime())
+            else:
+                try:
+                    if createdat_t.count(':') == 1:
+                        createdat_s = time.strptime(createdat_t, '%d.%m.%Y %H:%M')
+                    else:
+                        createdat_s = time.strptime(createdat_t, '%d.%m.%Y %H:%M:%S')
+                except:
+                    createdat_s = time.localtime()
+                createdat = time.strftime(u'%d.%m.%Y %H:%M:%S', createdat_s)
+
+            # Ändern vorhandener Datensätze (geschickterweise vor dem Einfügen!)
+            if check_export['modify_wehre']:
+                sql = u"""
+                    UPDATE WEHR SET
+                    TYP=1, SCHWELLENHOEHE={schwellenhoehe},	UEBERFALLBEIWERT={uebeiwert},
+                    GEOMETRIE1={kammerhoehe}, GEOMETRIE2={laenge},
+                    SCHACHTOBEN='{schoben}', SCHACHTUNTEN='{schunten}', 
+                    SOHLHOEHEOBEN='{sohleoben}', SOHLHOEHEUNTEN='{sohleunten}', 
+                    PLANUNGSSTATUS={simstatusnr},
+                    LASTMODIFIED='{lastmodified}', KOMMENTAR='{kommentar}'
+                    WHERE NAME = '{name}';
+                """.format(name=wnam, typ=1, schoben=schoben, schunten=schunten,
+                           sohleoben=sohleoben, sohleunten=sohleunten, 
+                           schwellenhoehe=schwellenhoehe, kammerhoehe=kammerhoehe, 
+                           laenge=laenge, uebeiwert=uebeiwert,
+                           simstatusnr=simstatusnr,
+                           lastmodified=createdat, kommentar=kommentar)
+
+                if not dbHE.sql(sql, u'dbHE: export_wehre (1)'):
+                    del dbQK
+                    return False
+
+            # Einfuegen in die Datenbank
+            if check_export['export_wehre']:
+                sql = u"""
+                    INSERT INTO WEHR
+                    (ID, NAME, TYP, SCHACHTOBEN, SCHACHTUNTEN, 
+                     SOHLHOEHEOBEN, SOHLHOEHEUNTEN, 
+                     SCHWELLENHOEHE, GEOMETRIE1, 
+                     GEOMETRIE2, UEBERFALLBEIWERT, 
+                     RUECKSCHLAGKLAPPE, VERFAHRBAR, PROFILTYP, 
+                     EREIGNISBILANZIERUNG, EREIGNISGRENZWERTENDE,
+                     EREIGNISGRENZWERTANFANG, EREIGNISTRENNDAUER, 
+                     EREIGNISINDIVIDUELL, PLANUNGSSTATUS, 
+                     LASTMODIFIED, KOMMENTAR)
+                    SELECT
+                      {id}, '{name}', {typ}, '{schoben}', '{schunten}', 
+                      {sohleoben}, {sohleunten}, 
+                      {schwellenhoehe}, {kammerhoehe}, 
+                      {laenge}, {uebeiwert}, 
+                      {rueckschlagklappe}, {verfahrbar}, {profiltyp}, 
+                      {ereignisbilanzierung}, {ereignisgrenzwertende},
+                      {ereignisgrenzwertanfang}, {ereignistrenndauer}, 
+                      {ereignisindividuell}, {simstatusnr},
+                      '{lastmodified}', '{kommentar}'
+                    FROM RDB$DATABASE
+                    WHERE '{name}' NOT IN (SELECT NAME FROM WEHR);
+                """.format(id=nextid, name=pnam, typ= 1 , schoben=schoben, schunten=schunten,
+                           sohleoben=sohleoben, sohleunten=sohleunten, 
+                           schwellenhoehe=schwellenhoehe, kammerhoehe=kammerhoehe, 
+                           laenge=laenge, uebeiwert=uebeiwert, 
+                           rueckschlagklappe=0, verfahrbar=0, profiltyp=52, 
+                           ereignisbilanzierung=0, ereignisgrenzwertende=0,
+                           ereignisgrenzwertanfang=0, ereignistrenndauer=0,
+                           ereignisindividuell=0, simstatusnr=simstatusnr,
+                           lastmodified=createdat, kommentar=kommentar)
+
+                if not dbHE.sql(sql, u'dbHE: export_wehre (2)'):
+                    del dbQK
+                    return False
+
+                nextid += 1
+
+        dbHE.sql(u"UPDATE ITWH$PROGINFO SET NEXTID = {:d}".format(nextid))
+        dbHE.commit()
+
+        fortschritt(u'{} Wehre eingefuegt'.format(nextid - nr0), 0.40)
+    progress_bar.setValue(60)
+
+    # --------------------------------------------------------------------------------------------
     # Export der Haltungen
     #
     # Erläuterung zum Feld "GESAMTFLAECHE":
@@ -582,15 +839,15 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
           SELECT
               haltungen.haltnam AS haltnam, haltungen.schoben AS schoben, haltungen.schunten AS schunten,
               coalesce(haltungen.laenge, glength(haltungen.geom)) AS laenge_t,
-              coalesce(haltungen.sohleoben,n1.sohlhoehe) AS sohleoben_t,
-              coalesce(haltungen.sohleunten,n2.sohlhoehe) AS sohleunten_t,
+              coalesce(haltungen.sohleoben,sob.sohlhoehe) AS sohleoben_t,
+              coalesce(haltungen.sohleunten,sun.sohlhoehe) AS sohleunten_t,
               haltungen.profilnam AS profilnam, profile.he_nr AS he_nr, haltungen.hoehe AS hoehe_t, haltungen.breite AS breite_t,
               entwaesserungsarten.he_nr AS entw_nr,
               haltungen.rohrtyp AS rohrtyp, haltungen.ks AS rauheit_t,
               haltungen.teilgebiet AS teilgebiet, haltungen.createdat AS createdat
             FROM
-              (haltungen JOIN schaechte AS n1 ON haltungen.schoben = n1.schnam)
-              JOIN schaechte AS n2 ON haltungen.schunten = n2.schnam
+              (haltungen JOIN schaechte AS sob ON haltungen.schoben = sob.schnam)
+              JOIN schaechte AS sun ON haltungen.schunten = sun.schnam
               LEFT JOIN profile ON haltungen.profilnam = profile.profilnam
               LEFT JOIN entwaesserungsarten ON haltungen.entwart = entwaesserungsarten.bezeichnung
               LEFT JOIN simulationsstatus AS st ON haltungen.simstatus = st.bezeichnung
@@ -928,7 +1185,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                 typ = 1  # durchlässig
 
             # Ändern vorhandener Datensätze (geschickterweise vor dem Einfügen!)
-            if check_export['modify_auslaesse']:
+            if check_export['modify_abflussparameter']:
                 sql = u"""
                   UPDATE ABFLUSSPARAMETER SET
                   ABFLUSSBEIWERTANFANG={anfangsabflussbeiwert},
@@ -959,7 +1216,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
                     return False
 
             # Einfuegen in die Datenbank
-            if check_export['export_auslaesse']:
+            if check_export['export_abflussparameter']:
                 sql = u"""
                   INSERT INTO ABFLUSSPARAMETER
                   ( NAME, ABFLUSSBEIWERTANFANG, ABFLUSSBEIWERTENDE, BENETZUNGSVERLUST,
@@ -1915,186 +2172,6 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
 
         fortschritt(u'{} Aussengebiete eingefuegt'.format(nextid - nr0), 0.98)
 
-    if False:
-
-        # --------------------------------------------------------------------------------------------------
-        # Setzen der internen Referenzen
-
-        # --------------------------------------------------------------------------------------------------
-        # 1. Schaechte: Anzahl Kanten
-
-        # sql = u"""
-        # select SCHACHT.ID, SCHACHT.NAME as schnam, count(*) as anz
-        # from SCHACHT join ROHR
-        # on (SCHACHT.NAME = ROHR.SCHACHTOBEN or SCHACHT.NAME = ROHR.SCHACHTUNTEN) group by SCHACHT.ID, SCHACHT.NAME
-        # """
-
-        # --------------------------------------------------------------------------------------------------
-        # 2. Haltungen (="ROHR"): Referenz zu Schaechten (="SCHACHT")
-
-        sql = u"""
-          UPDATE ROHR
-          SET SCHACHTOBENREF =
-            (SELECT ID FROM SCHACHT WHERE SCHACHT.NAME = ROHR.SCHACHTOBEN)
-          WHERE EXISTS (SELECT ID FROM SCHACHT WHERE SCHACHT.NAME = ROHR.SCHACHTOBEN)
-        """
-
-        if not dbHE.sql(sql, u'dbHE: interne Referenz rohr (1)'):
-            del dbQK
-            return False
-
-        sql = u"""
-          UPDATE ROHR
-          SET SCHACHTUNTENREF =
-            (SELECT ID FROM SCHACHT WHERE SCHACHT.NAME = ROHR.SCHACHTUNTEN)
-          WHERE EXISTS (SELECT ID FROM SCHACHT WHERE SCHACHT.NAME = ROHR.SCHACHTUNTEN)
-        """
-
-        if not dbHE.sql(sql, u'dbHE: interne Referenz rohr (2)'):
-            del dbQK
-            return False
-
-            # --------------------------------------------------------------------------------------------------
-            # 3. Haltungen (="ROHR"): Referenz zu teileinzugsgebieten
-
-        sql = u"""
-          UPDATE ROHR
-          SET TEILEINZUGSGEBIETREF =
-            (SELECT ID FROM TEILEINZUGSGEBIET WHERE TEILEINZUGSGEBIET.NAME = ROHR.TEILEINZUGSGEBIET)
-          WHERE EXISTS (SELECT ID FROM TEILEINZUGSGEBIET WHERE TEILEINZUGSGEBIET.NAME = ROHR.TEILEINZUGSGEBIET)
-        """
-
-        if not dbHE.sql(sql, u'dbHE: interne Referenz rohr (3)'):
-            del dbQK
-            return False
-
-            # --------------------------------------------------------------------------------------------------
-            # 3. Abflussparameter: Referenz zu Bodenklasse
-
-        sql = u"""
-          UPDATE ABFLUSSPARAMETER
-          SET BODENKLASSEREF =
-            (SELECT ID FROM BODENKLASSE WHERE BODENKLASSE.NAME = ABFLUSSPARAMETER.BODENKLASSE)
-          WHERE EXISTS (SELECT ID FROM BODENKLASSE WHERE BODENKLASSE.NAME = ABFLUSSPARAMETER.BODENKLASSE)
-        """
-
-        if not dbHE.sql(sql, u'dbHE: interne Referenz abflussparameter'):
-            del dbQK
-            return False
-
-        dbHE.sql(u"UPDATE ITWH$PROGINFO SET NEXTID = {:d}".format(nextid))
-        dbHE.commit()
-
-    # --------------------------------------------------------------------------------------------
-    # Export der Aussengebiete
-
-    if check_export['export_aussengebiete'] or check_export['modify_aussengebiete']:
-
-        # Nur Daten fuer ausgewaehlte Teilgebiete
-        if len(liste_teilgebiete) != 0:
-            auswahl = u" AND aussengebiete.teilgebiet in ('{}')".format(u"', '".join(liste_teilgebiete))
-        else:
-            auswahl = u""
-
-        sql = u"""
-            SELECT
-                schaechte.schnam AS schnam,
-                schaechte.deckelhoehe AS deckelhoehe,
-                schaechte.sohlhoehe AS sohlhoehe,
-                schaechte.durchm AS durchmesser,
-                schaechte.xsch AS xsch,
-                schaechte.ysch AS ysch,
-                kommentar AS kommentar,
-                createdat
-            FROM schaechte
-            WHERE schaechte.schachttyp = 'Auslass'{}
-            """.format(auswahl)
-
-        if not dbQK.sql(sql, u'dbQK: k_qkhe.export_auslaesse'):
-            del dbHE
-            return False
-
-        nr0 = nextid
-
-        fortschritt(u'Export Auslässe...', 0.20)
-
-        for attr in dbQK.fetchall():
-
-            # In allen Feldern None durch NULL ersetzen
-            (schnam, deckelhoehe_t, sohlhoehe_t, durchmesser_t, xsch_t, ysch_t, kommentar, createdat_t) = \
-                (u'NULL' if el is None else el for el in attr)
-
-            # Formatierung der Zahlen
-            (deckelhoehe, sohlhoehe, durchmesser, xsch, ysch) = \
-                (u'NULL' if tt == u'NULL' else u'{:.3f}'.format(float(tt)) \
-                 for tt in (deckelhoehe_t, sohlhoehe_t, durchmesser_t, xsch_t, ysch_t))
-
-            if createdat_t == u'NULL':
-                createdat = time.strftime(u'%d.%m.%Y %H:%M:%S', time.localtime())
-            else:
-                try:
-                    if createdat_t.count(':') == 1:
-                        createdat_s = time.strptime(createdat_t, '%d.%m.%Y %H:%M')
-                    else:
-                        createdat_s = time.strptime(createdat_t, '%d.%m.%Y %H:%M:%S')
-                except:
-                    createdat_s = time.localtime()
-                createdat = time.strftime(u'%d.%m.%Y %H:%M:%S', createdat_s)
-
-            # Ändern vorhandener Datensätze (geschickterweise vor dem Einfügen!)
-            if check_export['modify_auslaesse']:
-                sql = u"""
-                    UPDATE AUSLASS SET
-                    TYP={typ}, RUECKSCHLAGKLAPPE={rueckschlagklappe},
-                    SOHLHOEHE={sohlhoehe}, XKOORDINATE={xkoordinate}, YKOORDINATE={ykoordinate},
-                    GELAENDEHOEHE={gelaendehoehe}, ART={art}, ANZAHLKANTEN={anzahlkanten},
-                    SCHEITELHOEHE={scheitelhoehe}, KONSTANTERZUFLUSS={konstanterzufluss},
-                    PLANUNGSSTATUS='{planungsstatus}',
-                    LASTMODIFIED='{lastmodified}', KOMMENTAR='{kommentar}'
-                    WHERE NAME = '{name}';
-                """.format(typ=u'1', rueckschlagklappe=0, sohlhoehe=sohlhoehe,
-                           xkoordinate=xsch, ykoordinate=ysch,
-                           gelaendehoehe=deckelhoehe, art=u'3', anzahlkanten=u'0',
-                           scheitelhoehe=deckelhoehe, konstanterzufluss=0, planungsstatus=u'0',
-                           name=schnam, lastmodified=createdat, kommentar=kommentar,
-                           durchmesser=durchmesser)
-
-                if not dbHE.sql(sql, u'dbHE: export_auslaesse (1)'):
-                    del dbQK
-                    return False
-
-            # Einfuegen in die Datenbank
-            if check_export['export_auslaesse']:
-                sql = u"""
-                    INSERT INTO AUSLASS
-                    ( ID, TYP, RUECKSCHLAGKLAPPE, SOHLHOEHE,
-                      XKOORDINATE, YKOORDINATE,
-                      GELAENDEHOEHE, ART, ANZAHLKANTEN,
-                      SCHEITELHOEHE, KONSTANTERZUFLUSS, PLANUNGSSTATUS,
-                      NAME, LASTMODIFIED, KOMMENTAR)
-                    SELECT
-                      {id}, {typ}, {rueckschlagklappe}, {sohlhoehe},
-                      {xkoordinate}, {ykoordinate},
-                      {gelaendehoehe}, {art}, {anzahlkanten},
-                      {scheitelhoehe}, {konstanterzufluss}, '{planungsstatus}',
-                      '{name}', '{lastmodified}', '{kommentar}'
-                    FROM RDB$DATABASE
-                    WHERE '{name}' NOT IN (SELECT NAME FROM AUSLASS);
-                """.format(id=nextid, typ=u'1', rueckschlagklappe=0, sohlhoehe=sohlhoehe,
-                           xkoordinate=xsch, ykoordinate=ysch,
-                           gelaendehoehe=deckelhoehe, art=u'3', anzahlkanten=u'0',
-                           scheitelhoehe=deckelhoehe, konstanterzufluss=0, planungsstatus=u'0',
-                           name=schnam, lastmodified=createdat, kommentar=kommentar,
-                           durchmesser=durchmesser)
-
-                if not dbHE.sql(sql, u'dbHE: export_auslaesse (2)'):
-                    del dbQK
-                    return False
-
-                nextid += 1
-
-        dbHE.sql(u"UPDATE ITWH$PROGINFO SET NEXTID = {:d}".format(nextid))
-        dbHE.commit()
 
     # Zum Schluss: Schließen der Datenbankverbindungen
 
