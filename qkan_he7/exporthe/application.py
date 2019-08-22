@@ -440,7 +440,7 @@ class ExportToHE:
 
         # Check, ob die relevanten Layer nicht editable sind.
         if len({'flaechen', 'haltungen', 'linkfl', 'tezg', 'schaechte'} & get_editable_layers()) > 0:
-            iface.messageBar().pushMessage(u"Bedienerfehler: ",
+            self.iface.messageBar().pushMessage(u"Bedienerfehler: ",
                                            u'Die zu verarbeitenden Layer dürfen nicht im Status "bearbeitbar" sein. Abbruch!',
                                            level=Qgis.Critical)
             return False
@@ -626,5 +626,6 @@ class ExportToHE:
 
             QKan.save_config()
 
-            exportKanaldaten(iface, database_HE, dbtemplate_HE, self.dbQK, liste_teilgebiete, autokorrektur,
-                             fangradius, mindestflaeche, mit_verschneidung, datenbanktyp, check_export)
+            exportKanaldaten(self.iface, database_HE, dbtemplate_HE, self.dbQK, liste_teilgebiete, 
+                             autokorrektur, fangradius, mindestflaeche, mit_verschneidung, 
+                             datenbanktyp, check_export)

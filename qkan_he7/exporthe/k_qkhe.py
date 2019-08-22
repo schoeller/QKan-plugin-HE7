@@ -25,6 +25,7 @@ import shutil
 import time
 
 from qgis.PyQt.QtWidgets import QProgressBar
+from qgis.core import QgsMessageLog, Qgis
 
 from qkan.database.dbfunc import DBConnection
 from qkan.database.fbfunc import FBConnection
@@ -88,7 +89,7 @@ def exportKanaldaten(iface, database_HE, dbtemplate_HE, dbQK, liste_teilgebiete,
     progress_bar.setRange(0, 100)
     status_message = iface.messageBar().createMessage(u"", u"Export in Arbeit. Bitte warten.")
     status_message.layout().addWidget(progress_bar)
-    # iface.messageBar().pushWidget(status_message, Qgis.Info, 10)
+    iface.messageBar().pushWidget(status_message, Qgis.Info, 10)
 
     # Referenzliste der Abflusstypen für HYSTEM-EXTRAN
     he_fltyp_ref = abflusstypen('he')
