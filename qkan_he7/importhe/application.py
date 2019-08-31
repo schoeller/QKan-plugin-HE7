@@ -202,7 +202,7 @@ class ImportFromHE:
             database_QKan = QKan.config['database_QKan']
         else:
             database_QKan = ''
-        self.dlg_he.tf_qkanDB.setText(database_QKan)
+        self.dlg_he.tf_qkanDB.setText(str(database_QKan))
 
         if 'database_HE' in QKan.config:
             database_HE = QKan.config['database_HE']
