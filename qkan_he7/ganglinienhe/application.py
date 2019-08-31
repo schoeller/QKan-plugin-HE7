@@ -367,7 +367,7 @@ class Application:
                 self.__dlg2.close()
                 self.__log.info("Ganglinie wurde geschlossen.")
             self.__dlg.close()
-            selected_layers = self.__iface.legendInterface().selectedLayers()
+            selected_layers = self.iface.layerTreeView().selectedLayers()
             if len(selected_layers) == 0:
                 self.__log.critical(u"Es wurde kein Layer ausgewählt!")
                 self.__iface.messageBar().pushCritical("Fehler", u"Wählen Sie zunächst ein Layer!")
