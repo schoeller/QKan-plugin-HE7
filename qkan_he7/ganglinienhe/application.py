@@ -405,7 +405,7 @@ class Application:
                                                                u"Wählen Sie eine Simulations-Datenbank",
                                                                self.__workspace,
                                                                filter="IDBF (*.idbf);; Alle Dateien (*.*)")
-            self.__dlg.label_dbname.setText(self.__result_db)
+            self.__dlg.label_dbname.setText(str(self.__result_db))
             self.__log.info(u"Ergebnis-Datenbank wurde ausgewählt")
             self.__log.debug(u"Ergebnis-Datenbank liegt in {}".format(self.__result_db))
             self.__log.info("Navigator wurde initiiert.")
