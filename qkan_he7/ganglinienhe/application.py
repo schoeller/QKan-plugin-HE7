@@ -326,7 +326,7 @@ class Application:
         """
         haltungen = route.get("haltungen", [])
         schaechte = route.get("schaechte", [])
-        db = FBConnection(self.__result_db)
+        db = FBConnection(str(self.__result_db))
         if db is None:
             main_logger.ERROR(u'QKan.Ganglinie.__check_resultDB:\nDatenbank konnte nicht geöffnet werden:\n{}'.format(
                 self.__result_db))
